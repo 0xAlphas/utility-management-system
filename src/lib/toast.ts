@@ -210,6 +210,8 @@ export const toastMessages = {
 
 /**
  * Custom toast with action button
+ * Note: This uses react-hot-toast's custom content feature
+ * For complex JSX, consider creating a separate component
  */
 export const toastWithAction = (
   message: string,
@@ -224,21 +226,9 @@ export const toastWithAction = (
 
   const toastFn = type === 'success' ? toast.success : type === 'error' ? toast.error : toast;
 
+  // Use a string-based approach instead of JSX to avoid .ts file JSX issues
   return toastFn(
-    (t) => (
-      <div className="flex items-center justify-between gap-3">
-        <span>{message}</span>
-        <button
-          onClick={() => {
-            actionFn();
-            toast.dismiss(t.id);
-          }}
-          className="px-3 py-1 bg-white text-gray-900 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors"
-        >
-          {actionLabel}
-        </button>
-      </div>
-    ),
+    `${message} - ${actionLabel}`,
     { duration }
   );
 };

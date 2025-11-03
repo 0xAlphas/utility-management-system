@@ -160,10 +160,12 @@ showToast.error(toastMessages.networkError());
 
 ### Toast with Action Button
 
-```typescript
-import { toastWithAction } from '@/lib/toast';
+For toasts with action buttons (like "Undo"), use the separate component:
 
-toastWithAction(
+```typescript
+import { showToastWithAction } from '@/components/ToastWithAction';
+
+showToastWithAction(
   'Item deleted',
   'Undo',
   () => {
@@ -258,7 +260,8 @@ const handleSubmitReading = async (e: React.FormEvent) => {
 ### Example 3: Delete Confirmation
 
 ```typescript
-import { showToast, toastWithAction } from '@/lib/toast';
+import { showToast } from '@/lib/toast';
+import { showToastWithAction } from '@/components/ToastWithAction';
 
 const handleDelete = async (id: string) => {
   const toastId = showToast.loading('Deleting...');
@@ -269,7 +272,7 @@ const handleDelete = async (id: string) => {
     showToast.dismiss(toastId);
 
     // Show success with undo option
-    toastWithAction(
+    showToastWithAction(
       'Item deleted',
       'Undo',
       async () => {
@@ -435,10 +438,10 @@ toastApiRequest<T>(
 )
 ```
 
-### `toastWithAction`
+### `showToastWithAction` (from ToastWithAction component)
 
 ```typescript
-toastWithAction(
+showToastWithAction(
   message: string,
   actionLabel: string,
   actionFn: () => void,
