@@ -1,15 +1,249 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "sqlserver"
   url      = env("DATABASE_URL")
+}
+
+// ===========================
+// STAFF & AUTHENTICATION
+// ===========================
+
+model Staff {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  name         String
+  email        String?  @unique
+  role         StaffRole
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("staff")
+}
+
+enum StaffRole {
+  ADMIN
+  METER_READER
+  CLERK
+  MANAGER
+}
+
+// ===========================
+// CUSTOMERS
+// ===========================
+
+model Customer {
+  id          String       @id @default(uuid())
+  name        String
+  type        CustomerType
+  contact     String
+  email       String?
+  address     String
+  city        String?
+  postalCode  String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  meters      Meter[]
+  bills       Bill[]
+  complaints  Complaint[]
+
+  @@map("customers")
+}
+
+enum CustomerType {
+  HOUSEHOLD
+  BUSINESS
+  GOVERNMENT
+}
+
+// ===========================
+// UTILITIES & METERS
+// ===========================
+
+model UtilityType {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  unit        String   // e.g., "kWh", "m³", "units"
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  meters      Meter[]
+  tariffs     Tariff[]
+
+  @@map("utility_types")
+}
+
+model Meter {
+  id               String      @id @default(uuid())
+  meterNumber      String      @unique
+  installationDate DateTime    @default(now())
+  lastReadingDate  DateTime?
+  status           MeterStatus @default(ACTIVE)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  customerId       String
+  customer         Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  utilityTypeId    String
+  utilityType      UtilityType @relation(fields: [utilityTypeId], references: [id], onDelete: Restrict)
+
+  readings         MeterReading[]
+
+  @@unique([customerId, utilityTypeId])
+  @@map("meters")
+}
+
+enum MeterStatus {
+  ACTIVE
+  INACTIVE
+  FAULTY
+  DISCONNECTED
+}
+
+model MeterReading {
+  id           String   @id @default(uuid())
+  readingValue Float
+  readingDate  DateTime @default(now())
+  remarks      String?
+  recordedBy   String?  // Staff username or ID
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  meterId      String
+  meter        Meter    @relation(fields: [meterId], references: [id], onDelete: Cascade)
+
+  @@map("meter_readings")
+}
+
+// ===========================
+// TARIFFS & BILLING
+// ===========================
+
+model Tariff {
+  id          String   @id @default(uuid())
+  name        String
+  minUsage    Float    @default(0)
+  maxUsage    Float?   // null means unlimited
+  rate        Float
+  fixedCharge Float    @default(0)
+  isActive    Boolean  @default(true)
+  effectiveFrom DateTime @default(now())
+  effectiveTo   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  utilityTypeId String
+  utilityType   UtilityType @relation(fields: [utilityTypeId], references: [id], onDelete: Restrict)
+
+  @@map("tariffs")
+}
+
+model Bill {
+  id                String      @id @default(uuid())
+  billNumber        String      @unique
+  billingMonth      Int         // 1-12
+  billingYear       Int
+  issueDate         DateTime    @default(now())
+  dueDate           DateTime
+  previousReading   Float?
+  currentReading    Float?
+  consumption       Float       @default(0)
+  totalAmount       Float
+  paidAmount        Float       @default(0)
+  outstandingAmount Float       @default(0)
+  status            BillStatus  @default(UNPAID)
+  remarks           String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  customerId        String
+  customer          Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  payments          Payment[]
+
+  @@unique([customerId, billingMonth, billingYear])
+  @@map("bills")
+}
+
+enum BillStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  amount        Float
+  paymentDate   DateTime      @default(now())
+  paymentMethod PaymentMethod
+  referenceNumber String?
+  remarks       String?
+  recordedBy    String?       // Staff username or ID
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  billId        String
+  bill          Bill          @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+  ONLINE
+  CHEQUE
+  MOBILE_PAYMENT
+}
+
+// ===========================
+// COMPLAINTS & SUPPORT
+// ===========================
+
+model Complaint {
+  id          String          @id @default(uuid())
+  subject     String
+  description String
+  status      ComplaintStatus @default(OPEN)
+  priority    Priority        @default(MEDIUM)
+  resolution  String?
+  createdAt   DateTime        @default(now())
+  resolvedAt  DateTime?
+  updatedAt   DateTime        @updatedAt
+
+  customerId  String
+  customer    Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("complaints")
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  REJECTED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }
