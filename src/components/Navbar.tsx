@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { logout } from '@/lib/auth-client';
 
 interface NavbarProps {
   userName: string;
@@ -10,13 +10,10 @@ interface NavbarProps {
 }
 
 export default function Navbar({ userName, userRole, onMenuToggle }: NavbarProps) {
-  const router = useRouter();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    router.push('/login');
+    logout();
   };
 
   const getRoleBadgeColor = (role: string) => {
