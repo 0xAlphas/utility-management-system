@@ -21,19 +21,12 @@ model Staff {
   passwordHash String
   name         String
   email        String?  @unique
-  role         StaffRole
+  role         String   // ADMIN, METER_READER, CLERK, MANAGER
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@map("staff")
-}
-
-enum StaffRole {
-  ADMIN
-  METER_READER
-  CLERK
-  MANAGER
 }
 
 // ===========================
@@ -43,7 +36,7 @@ enum StaffRole {
 model Customer {
   id          String       @id @default(uuid())
   name        String
-  type        CustomerType
+  type        String       // HOUSEHOLD, BUSINESS, GOVERNMENT
   contact     String
   email       String?
   address     String
@@ -58,12 +51,6 @@ model Customer {
   complaints  Complaint[]
 
   @@map("customers")
-}
-
-enum CustomerType {
-  HOUSEHOLD
-  BUSINESS
-  GOVERNMENT
 }
 
 // ===========================
@@ -90,7 +77,7 @@ model Meter {
   meterNumber      String      @unique
   installationDate DateTime    @default(now())
   lastReadingDate  DateTime?
-  status           MeterStatus @default(ACTIVE)
+  status           String      @default("ACTIVE") // ACTIVE, INACTIVE, FAULTY, DISCONNECTED
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
@@ -98,19 +85,12 @@ model Meter {
   customer         Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   utilityTypeId    String
-  utilityType      UtilityType @relation(fields: [utilityTypeId], references: [id], onDelete: Restrict)
+  utilityType      UtilityType @relation(fields: [utilityTypeId], references: [id], onDelete: NoAction)
 
   readings         MeterReading[]
 
   @@unique([customerId, utilityTypeId])
   @@map("meters")
-}
-
-enum MeterStatus {
-  ACTIVE
-  INACTIVE
-  FAULTY
-  DISCONNECTED
 }
 
 model MeterReading {
@@ -146,7 +126,7 @@ model Tariff {
   updatedAt   DateTime @updatedAt
 
   utilityTypeId String
-  utilityType   UtilityType @relation(fields: [utilityTypeId], references: [id], onDelete: Restrict)
+  utilityType   UtilityType @relation(fields: [utilityTypeId], references: [id], onDelete: NoAction)
 
   @@map("tariffs")
 }
@@ -164,7 +144,7 @@ model Bill {
   totalAmount       Float
   paidAmount        Float       @default(0)
   outstandingAmount Float       @default(0)
-  status            BillStatus  @default(UNPAID)
+  status            String      @default("UNPAID") // UNPAID, PARTIALLY_PAID, PAID, OVERDUE, CANCELLED
   remarks           String?
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
@@ -178,19 +158,11 @@ model Bill {
   @@map("bills")
 }
 
-enum BillStatus {
-  UNPAID
-  PARTIALLY_PAID
-  PAID
-  OVERDUE
-  CANCELLED
-}
-
 model Payment {
   id            String        @id @default(uuid())
   amount        Float
   paymentDate   DateTime      @default(now())
-  paymentMethod PaymentMethod
+  paymentMethod String        // CASH, CARD, BANK_TRANSFER, ONLINE, CHEQUE, MOBILE_PAYMENT
   referenceNumber String?
   remarks       String?
   recordedBy    String?       // Staff username or ID
@@ -203,15 +175,6 @@ model Payment {
   @@map("payments")
 }
 
-enum PaymentMethod {
-  CASH
-  CARD
-  BANK_TRANSFER
-  ONLINE
-  CHEQUE
-  MOBILE_PAYMENT
-}
-
 // ===========================
 // COMPLAINTS & SUPPORT
 // ===========================
@@ -220,8 +183,8 @@ model Complaint {
   id          String          @id @default(uuid())
   subject     String
   description String
-  status      ComplaintStatus @default(OPEN)
-  priority    Priority        @default(MEDIUM)
+  status      String          @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED, REJECTED
+  priority    String          @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
   resolution  String?
   createdAt   DateTime        @default(now())
   resolvedAt  DateTime?
@@ -231,19 +194,4 @@ model Complaint {
   customer    Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@map("complaints")
-}
-
-enum ComplaintStatus {
-  OPEN
-  IN_PROGRESS
-  RESOLVED
-  CLOSED
-  REJECTED
-}
-
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
 }

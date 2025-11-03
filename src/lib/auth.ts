@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { StaffRole } from '@/generated/prisma';
+import { StaffRole } from './types';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import prisma from './prisma';
@@ -10,7 +10,7 @@ const JWT_EXPIRES_IN = '7d';
 export interface JWTPayload {
   id: string;
   username: string;
-  role: StaffRole;
+  role: string;
 }
 
 export interface AuthenticatedRequest extends NextRequest {
@@ -62,13 +62,13 @@ export async function authenticateRequest(request: NextRequest): Promise<JWTPayl
   return payload;
 }
 
-export function authorizeRoles(userRole: StaffRole, allowedRoles: StaffRole[]): boolean {
+export function authorizeRoles(userRole: string, allowedRoles: string[]): boolean {
   return allowedRoles.includes(userRole);
 }
 
 export async function requireAuth(
   request: NextRequest,
-  allowedRoles?: StaffRole[]
+  allowedRoles?: string[]
 ): Promise<{ user: JWTPayload } | Response> {
   const user = await authenticateRequest(request);
 
