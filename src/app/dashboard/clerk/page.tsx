@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { showToast, toastMessages } from '@/lib/toast';
 
 interface Customer {
   id: string;
@@ -270,8 +271,11 @@ export default function ClerkDashboard() {
     e.preventDefault();
 
     if (!validateBillForm()) {
+      showToast.warning('Please fill in all required fields');
       return;
     }
+
+    const toastId = showToast.loading('Generating bill...');
 
     try {
       setSubmitting(true);
@@ -298,15 +302,20 @@ export default function ClerkDashboard() {
 
       const data = await response.json();
 
+      showToast.dismiss(toastId);
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate bill');
       }
 
-      setSuccessMessage(`Bill ${data.data.billNumber} generated successfully!`);
+      showToast.success(`Bill ${data.data.billNumber} generated successfully!`);
       closeBillModal();
       fetchBills();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate bill');
+      showToast.dismiss(toastId);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate bill';
+      showToast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -316,8 +325,11 @@ export default function ClerkDashboard() {
     e.preventDefault();
 
     if (!validatePaymentForm()) {
+      showToast.warning('Please check the payment amount');
       return;
     }
+
+    const toastId = showToast.loading('Recording payment...');
 
     try {
       setSubmitting(true);
@@ -346,15 +358,20 @@ export default function ClerkDashboard() {
 
       const data = await response.json();
 
+      showToast.dismiss(toastId);
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to record payment');
       }
 
-      setSuccessMessage('Payment recorded successfully! Bill status updated.');
+      showToast.success('Payment recorded successfully! Bill status updated.');
       closePaymentModal();
       fetchBills();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to record payment');
+      showToast.dismiss(toastId);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to record payment';
+      showToast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }

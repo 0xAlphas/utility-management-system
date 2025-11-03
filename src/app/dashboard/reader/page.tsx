@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { showToast } from '@/lib/toast';
 
 interface UtilityType {
   id: string;
@@ -156,8 +157,11 @@ export default function MeterReaderDashboard() {
     e.preventDefault();
 
     if (!validateReading()) {
+      showToast.warning('Please check the reading value');
       return;
     }
+
+    const toastId = showToast.loading('Submitting reading...');
 
     try {
       setSubmitting(true);
@@ -184,15 +188,20 @@ export default function MeterReaderDashboard() {
 
       const data = await response.json();
 
+      showToast.dismiss(toastId);
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to submit reading');
       }
 
-      setSuccessMessage('Reading submitted successfully!');
+      showToast.success('Reading submitted successfully!');
       closeReadingForm();
       fetchMeters(); // Refresh the meters list
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit reading');
+      showToast.dismiss(toastId);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit reading';
+      showToast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
