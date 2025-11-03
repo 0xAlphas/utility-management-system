@@ -107,8 +107,18 @@ export default function ManagerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState('month');
+  const [userInfo, setUserInfo] = useState<any>(null);
 
   useEffect(() => {
+    // Get user info for debugging
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        setUserInfo(JSON.parse(userData));
+      } catch (e) {
+        console.error('Failed to parse user data:', e);
+      }
+    }
     fetchAllReports();
   }, [period]);
 
@@ -134,6 +144,9 @@ export default function ManagerDashboard() {
         startDate.setFullYear(startDate.getFullYear() - 1);
       }
 
+      console.log('Fetching reports with period:', period);
+      console.log('Date range:', startDate.toISOString(), 'to', endDate.toISOString());
+
       const [dashboardRes, revenueRes, defaultersRes, usageRes] = await Promise.all([
         fetch(`/api/reports/dashboard?period=${period}`, {
           headers: { 'Authorization': `Bearer ${token}` },
@@ -149,8 +162,36 @@ export default function ManagerDashboard() {
         }),
       ]);
 
-      if (!dashboardRes.ok || !revenueRes.ok || !defaultersRes.ok || !usageRes.ok) {
-        throw new Error('Failed to fetch reports');
+      console.log('Response statuses:', {
+        dashboard: dashboardRes.status,
+        revenue: revenueRes.status,
+        defaulters: defaultersRes.status,
+        usage: usageRes.status,
+      });
+
+      // Check each response individually for better error messages
+      if (!dashboardRes.ok) {
+        const errorData = await dashboardRes.json().catch(() => ({}));
+        console.error('Dashboard API error:', errorData);
+        throw new Error(`Dashboard API failed: ${errorData.error || dashboardRes.statusText}`);
+      }
+
+      if (!revenueRes.ok) {
+        const errorData = await revenueRes.json().catch(() => ({}));
+        console.error('Revenue API error:', errorData);
+        throw new Error(`Revenue API failed: ${errorData.error || revenueRes.statusText}`);
+      }
+
+      if (!defaultersRes.ok) {
+        const errorData = await defaultersRes.json().catch(() => ({}));
+        console.error('Defaulters API error:', errorData);
+        throw new Error(`Defaulters API failed: ${errorData.error || defaultersRes.statusText}`);
+      }
+
+      if (!usageRes.ok) {
+        const errorData = await usageRes.json().catch(() => ({}));
+        console.error('Usage API error:', errorData);
+        throw new Error(`Usage API failed: ${errorData.error || usageRes.statusText}`);
       }
 
       const [dashboard, revenue, defaulters, usage] = await Promise.all([
@@ -160,11 +201,14 @@ export default function ManagerDashboard() {
         usageRes.json(),
       ]);
 
+      console.log('Fetched data:', { dashboard, revenue, defaulters, usage });
+
       setDashboardStats(dashboard.data);
       setRevenueData(revenue.data);
       setDefaultersData(defaulters);
       setUsageData(usage.data);
     } catch (err) {
+      console.error('Fetch reports error:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch reports');
     } finally {
       setLoading(false);
@@ -273,15 +317,25 @@ export default function ManagerDashboard() {
 
       {/* Error Message */}
       {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center justify-between">
-          <span>{error}</span>
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-semibold">Error Loading Dashboard</span>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-600 hover:text-red-800"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <p className="text-sm">{error}</p>
+          <p className="text-xs mt-2">Check browser console (F12) for detailed error logs.</p>
           <button
-            onClick={() => setError(null)}
-            className="text-red-600 hover:text-red-800"
+            onClick={fetchAllReports}
+            className="mt-3 px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700"
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            Retry
           </button>
         </div>
       )}
