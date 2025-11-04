@@ -217,10 +217,10 @@ export default function Sidebar({ userRole, isOpen = true, onClose }: SidebarPro
               key={item.name}
               href={item.href}
               onClick={onClose}
-              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-150 ${
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                 active
-                  ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-l-4 border-blue-700 shadow-sm'
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 transform hover:translate-x-1'
               }`}
             >
               <span className={active ? 'text-blue-700' : 'text-gray-500'}>{item.icon}</span>
@@ -245,21 +245,23 @@ export default function Sidebar({ userRole, isOpen = true, onClose }: SidebarPro
 
       {/* Sidebar Footer */}
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center px-4 py-3 bg-gray-50 rounded-lg">
+        <div className="flex items-center px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200">
           <div className="flex-shrink-0">
-            <svg
-              className="h-8 w-8 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <svg
+                className="h-5 w-5 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
           </div>
           <div className="ml-3">
             <p className="text-xs font-medium text-gray-900">Need Help?</p>

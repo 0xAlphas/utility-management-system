@@ -18,12 +18,12 @@ export default function Navbar({ userName, userRole, onMenuToggle }: NavbarProps
 
   const getRoleBadgeColor = (role: string) => {
     const colors: Record<string, string> = {
-      ADMIN: 'bg-blue-100 text-blue-800',
-      CLERK: 'bg-green-100 text-green-800',
-      METER_READER: 'bg-orange-100 text-orange-800',
-      MANAGER: 'bg-purple-100 text-purple-800',
+      ADMIN: 'bg-blue-100 text-blue-800 ring-1 ring-blue-600',
+      CLERK: 'bg-green-100 text-green-800 ring-1 ring-green-600',
+      METER_READER: 'bg-orange-100 text-orange-800 ring-1 ring-orange-600',
+      MANAGER: 'bg-purple-100 text-purple-800 ring-1 ring-purple-600',
     };
-    return colors[role] || 'bg-gray-100 text-gray-800';
+    return colors[role] || 'bg-gray-100 text-gray-800 ring-1 ring-gray-600';
   };
 
   const formatRole = (role: string) => {
@@ -31,7 +31,7 @@ export default function Navbar({ userName, userRole, onMenuToggle }: NavbarProps
   };
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
+    <nav className="bg-white shadow-md sticky top-0 z-50 border-b border-gray-200">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Left Section: Mobile Menu + Logo */}
@@ -60,7 +60,7 @@ export default function Navbar({ userName, userRole, onMenuToggle }: NavbarProps
             {/* Logo and Title */}
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-sm">
                   <svg
                     className="h-5 w-5 text-white"
                     fill="none"
@@ -173,7 +173,7 @@ export default function Navbar({ userName, userRole, onMenuToggle }: NavbarProps
             {/* Logout Button (Desktop) */}
             <button
               onClick={handleLogout}
-              className="hidden md:inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition"
+              className="hidden md:inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transform hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
             >
               <svg
                 className="h-4 w-4 mr-2"
