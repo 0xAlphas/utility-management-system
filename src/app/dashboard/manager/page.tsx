@@ -343,64 +343,64 @@ export default function ManagerDashboard() {
       {/* Stats Grid */}
       {dashboardStats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
             <div className="flex items-center">
-              <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
+              <div className="flex-shrink-0 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-3 shadow-sm">
                 <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Period Revenue</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900">
                   {formatCurrency(dashboardStats.overview.revenue.amount)}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
             <div className="flex items-center">
-              <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
+              <div className="flex-shrink-0 bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-3 shadow-sm">
                 <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Payments</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900">
                   {dashboardStats.overview.revenue.paymentsCount}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
             <div className="flex items-center">
-              <div className="flex-shrink-0 bg-yellow-500 rounded-md p-3">
+              <div className="flex-shrink-0 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-3 shadow-sm">
                 <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Outstanding</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900">
                   {formatCurrency(dashboardStats.overview.bills.totalOutstanding)}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
             <div className="flex items-center">
-              <div className="flex-shrink-0 bg-red-500 rounded-md p-3">
+              <div className="flex-shrink-0 bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-3 shadow-sm">
                 <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Unpaid Bills</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900">
                   {dashboardStats.overview.bills.unpaid}
                 </p>
               </div>
@@ -412,7 +412,7 @@ export default function ManagerDashboard() {
       {/* Revenue Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Revenue by Period */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Revenue Trend</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={getRevenueByPeriodChart()}>
@@ -427,7 +427,7 @@ export default function ManagerDashboard() {
         </div>
 
         {/* Revenue by Payment Method */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Revenue by Payment Method</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -454,7 +454,7 @@ export default function ManagerDashboard() {
       {/* Revenue by Customer Type & Usage */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Revenue by Customer Type */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Revenue by Customer Type</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={getRevenueByCustomerTypeChart()}>
@@ -469,7 +469,7 @@ export default function ManagerDashboard() {
         </div>
 
         {/* Usage by Customer Type */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Consumption by Customer Type</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={getUsageByCustomerTypeChart()}>
@@ -488,7 +488,7 @@ export default function ManagerDashboard() {
       {/* Usage Trend & Defaulters */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Usage Trend */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Consumption Trend</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={getUsageByMonthChart()}>
@@ -504,7 +504,7 @@ export default function ManagerDashboard() {
         </div>
 
         {/* Defaulters by Age */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Defaulters by Age Group</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={getDefaultersByAgeChart()}>
@@ -521,8 +521,8 @@ export default function ManagerDashboard() {
 
       {/* Top Consumers Table */}
       {usageData && usageData.topConsumers.length > 0 && (
-        <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden mb-8 border border-gray-100">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
             <h2 className="text-lg font-semibold text-gray-900">Top Consumers</h2>
           </div>
           <div className="overflow-x-auto">
@@ -548,7 +548,7 @@ export default function ManagerDashboard() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {usageData.topConsumers.slice(0, 10).map((consumer) => (
-                  <tr key={consumer.customerId} className="hover:bg-gray-50">
+                  <tr key={consumer.customerId} className="hover:bg-purple-50 transition-colors duration-150">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{consumer.customerName}</div>
                     </td>
@@ -574,8 +574,8 @@ export default function ManagerDashboard() {
 
       {/* Defaulters Table */}
       {defaultersData && defaultersData.data.length > 0 && (
-        <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden mb-8 border border-gray-100">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
             <h2 className="text-lg font-semibold text-gray-900">Recent Defaulters</h2>
           </div>
           <div className="overflow-x-auto">
@@ -601,7 +601,7 @@ export default function ManagerDashboard() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {defaultersData.data.slice(0, 10).map((defaulter) => (
-                  <tr key={defaulter.id} className="hover:bg-gray-50">
+                  <tr key={defaulter.id} className="hover:bg-red-50 transition-colors duration-150">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{defaulter.billNumber}</div>
                     </td>
@@ -618,12 +618,12 @@ export default function ManagerDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        className={`px-3 py-1 text-xs font-semibold rounded-full ring-1 ${
                           defaulter.daysOverdue > 90
-                            ? 'bg-red-100 text-red-800'
+                            ? 'bg-red-100 text-red-800 ring-red-600'
                             : defaulter.daysOverdue > 30
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-green-100 text-green-800'
+                            ? 'bg-yellow-100 text-yellow-800 ring-yellow-600'
+                            : 'bg-green-100 text-green-800 ring-green-600'
                         }`}
                       >
                         {defaulter.daysOverdue} days
@@ -640,7 +640,7 @@ export default function ManagerDashboard() {
       {/* Summary Stats Cards */}
       {revenueData && usageData && defaultersData && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
             <h3 className="text-sm font-medium text-gray-600 mb-2">Revenue Summary</h3>
             <div className="space-y-2">
               <div className="flex justify-between">
@@ -664,7 +664,7 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
             <h3 className="text-sm font-medium text-gray-600 mb-2">Usage Summary</h3>
             <div className="space-y-2">
               <div className="flex justify-between">
@@ -688,7 +688,7 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
             <h3 className="text-sm font-medium text-gray-600 mb-2">Defaulters Summary</h3>
             <div className="space-y-2">
               <div className="flex justify-between">

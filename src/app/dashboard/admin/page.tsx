@@ -274,56 +274,56 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <div className="flex items-center">
-            <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
+            <div className="flex-shrink-0 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 shadow-sm">
               <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Customers</p>
-              <p className="text-2xl font-semibold text-gray-900">{customers.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{customers.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <div className="flex items-center">
-            <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
+            <div className="flex-shrink-0 bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-3 shadow-sm">
               <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Active Meters</p>
-              <p className="text-2xl font-semibold text-gray-900">{meters.filter(m => m.status === 'ACTIVE').length}</p>
+              <p className="text-2xl font-bold text-gray-900">{meters.filter(m => m.status === 'ACTIVE').length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <div className="flex items-center">
-            <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
+            <div className="flex-shrink-0 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-3 shadow-sm">
               <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Active Tariffs</p>
-              <p className="text-2xl font-semibold text-gray-900">{tariffs.filter(t => t.isActive).length}</p>
+              <p className="text-2xl font-bold text-gray-900">{tariffs.filter(t => t.isActive).length}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Customers Table */}
-      <div className="bg-white rounded-lg shadow mb-6">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+      <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 mb-6 border border-gray-100">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white">
           <h2 className="text-lg font-semibold text-gray-900">Customers</h2>
           <button
             onClick={() => setShowCustomerModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center"
+            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-200 flex items-center shadow-sm hover:shadow-md"
           >
             <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -354,14 +354,14 @@ export default function AdminDashboard() {
                 </tr>
               ) : (
                 customers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-gray-50">
+                  <tr key={customer.id} className="hover:bg-blue-50 transition-colors duration-150 cursor-pointer">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{customer.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.type}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.contact}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.email || 'N/A'}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{customer.address}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${customer.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${customer.isActive ? 'bg-green-100 text-green-800 ring-1 ring-green-600' : 'bg-red-100 text-red-800 ring-1 ring-red-600'}`}>
                         {customer.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
@@ -374,12 +374,12 @@ export default function AdminDashboard() {
       </div>
 
       {/* Meters Table */}
-      <div className="bg-white rounded-lg shadow mb-6">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+      <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 mb-6 border border-gray-100">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white">
           <h2 className="text-lg font-semibold text-gray-900">Meters</h2>
           <button
             onClick={() => setShowMeterModal(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center"
+            className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transform hover:scale-105 transition-all duration-200 flex items-center shadow-sm hover:shadow-md"
           >
             <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -409,7 +409,7 @@ export default function AdminDashboard() {
                 </tr>
               ) : (
                 meters.map((meter) => (
-                  <tr key={meter.id} className="hover:bg-gray-50">
+                  <tr key={meter.id} className="hover:bg-green-50 transition-colors duration-150 cursor-pointer">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{meter.meterNumber}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{meter.customer.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{meter.utilityType.name}</td>
@@ -417,11 +417,11 @@ export default function AdminDashboard() {
                       {new Date(meter.installationDate).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        meter.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                        meter.status === 'INACTIVE' ? 'bg-gray-100 text-gray-800' :
-                        meter.status === 'FAULTY' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                        meter.status === 'ACTIVE' ? 'bg-green-100 text-green-800 ring-1 ring-green-600' :
+                        meter.status === 'INACTIVE' ? 'bg-gray-100 text-gray-800 ring-1 ring-gray-600' :
+                        meter.status === 'FAULTY' ? 'bg-red-100 text-red-800 ring-1 ring-red-600' :
+                        'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-600'
                       }`}>
                         {meter.status}
                       </span>
@@ -435,12 +435,12 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tariffs Table */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+      <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white">
           <h2 className="text-lg font-semibold text-gray-900">Tariffs</h2>
           <button
             onClick={() => setShowTariffModal(true)}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center"
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transform hover:scale-105 transition-all duration-200 flex items-center shadow-sm hover:shadow-md"
           >
             <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -471,7 +471,7 @@ export default function AdminDashboard() {
                 </tr>
               ) : (
                 tariffs.map((tariff) => (
-                  <tr key={tariff.id} className="hover:bg-gray-50">
+                  <tr key={tariff.id} className="hover:bg-purple-50 transition-colors duration-150 cursor-pointer">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tariff.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tariff.utilityType.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${tariff.rate.toFixed(2)}</td>
@@ -480,7 +480,7 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${tariff.fixedCharge.toFixed(2)}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${tariff.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${tariff.isActive ? 'bg-green-100 text-green-800 ring-1 ring-green-600' : 'bg-red-100 text-red-800 ring-1 ring-red-600'}`}>
                         {tariff.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
@@ -503,7 +503,7 @@ export default function AdminDashboard() {
                 required
                 value={customerForm.name}
                 onChange={(e) => setCustomerForm({ ...customerForm, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               />
             </div>
 
@@ -580,13 +580,13 @@ export default function AdminDashboard() {
             <button
               type="button"
               onClick={() => setShowCustomerModal(false)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md"
             >
               Add Customer
             </button>

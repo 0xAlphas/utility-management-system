@@ -260,52 +260,52 @@ export default function MeterReaderDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <div className="flex items-center">
-            <div className="flex-shrink-0 bg-orange-500 rounded-md p-3">
+            <div className="flex-shrink-0 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-3 shadow-sm">
               <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
               </svg>
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Today's Readings</p>
-              <p className="text-2xl font-semibold text-gray-900">{todayReadings}</p>
+              <p className="text-2xl font-bold text-gray-900">{todayReadings}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <div className="flex items-center">
-            <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
+            <div className="flex-shrink-0 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 shadow-sm">
               <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Active Meters</p>
-              <p className="text-2xl font-semibold text-gray-900">{meters.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{meters.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <div className="flex items-center">
-            <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
+            <div className="flex-shrink-0 bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-3 shadow-sm">
               <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Pending</p>
-              <p className="text-2xl font-semibold text-gray-900">{meters.length - todayReadings}</p>
+              <p className="text-2xl font-bold text-gray-900">{meters.length - todayReadings}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Meters Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
+      <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden border border-gray-100">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
           <h2 className="text-lg font-semibold text-gray-900">All Active Meters</h2>
         </div>
 
@@ -350,7 +350,7 @@ export default function MeterReaderDashboard() {
                 {meters.map((meter) => {
                   const lastReading = getLastReading(meter);
                   return (
-                    <tr key={meter.id} className="hover:bg-gray-50">
+                    <tr key={meter.id} className="hover:bg-orange-50 transition-colors duration-150">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{meter.meterNumber}</div>
                       </td>
@@ -373,7 +373,7 @@ export default function MeterReaderDashboard() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <button
                           onClick={() => openReadingForm(meter)}
-                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 transform hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                         >
                           <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

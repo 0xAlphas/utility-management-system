@@ -400,8 +400,11 @@ export default function ClerkDashboard() {
 
     return (
       <span
-        className={`px-2 py-1 text-xs font-semibold rounded-full ${
-          statusClasses[status as keyof typeof statusClasses] || 'bg-gray-100 text-gray-800'
+        className={`px-3 py-1 text-xs font-semibold rounded-full ring-1 ${
+          status === 'PAID' ? 'bg-green-100 text-green-800 ring-green-600' :
+          status === 'PARTIALLY_PAID' ? 'bg-yellow-100 text-yellow-800 ring-yellow-600' :
+          status === 'UNPAID' || status === 'OVERDUE' ? 'bg-red-100 text-red-800 ring-red-600' :
+          'bg-gray-100 text-gray-800 ring-gray-600'
         }`}
       >
         {status.replace('_', ' ')}
@@ -463,56 +466,56 @@ export default function ClerkDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <div className="flex items-center">
-            <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
+            <div className="flex-shrink-0 bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-3 shadow-sm">
               <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Pending Bills</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.pendingBills}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.pendingBills}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <div className="flex items-center">
-            <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
+            <div className="flex-shrink-0 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 shadow-sm">
               <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Today's Payments</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.todayPayments}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.todayPayments}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
           <div className="flex items-center">
-            <div className="flex-shrink-0 bg-yellow-500 rounded-md p-3">
+            <div className="flex-shrink-0 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-3 shadow-sm">
               <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Outstanding</p>
-              <p className="text-2xl font-semibold text-gray-900">{formatCurrency(stats.totalOutstanding)}</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalOutstanding)}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow p-6 mb-8">
+      <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 mb-8 border border-gray-100">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             onClick={openBillModal}
-            className="p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition text-left"
+            className="p-6 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-gradient-to-br hover:from-green-50 hover:to-green-100 hover:shadow-md transform hover:scale-105 transition-all duration-200 text-left"
           >
             <div className="text-green-600 mb-2">
               <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -536,9 +539,9 @@ export default function ClerkDashboard() {
                 setError('No bills available');
               }
             }}
-            className="p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition text-left"
+            className="p-6 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 hover:shadow-md transform hover:scale-105 transition-all duration-200 text-left"
           >
-            <div className="text-green-600 mb-2">
+            <div className="text-blue-600 mb-2">
               <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
@@ -550,8 +553,8 @@ export default function ClerkDashboard() {
       </div>
 
       {/* Outstanding Bills Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
+      <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden border border-gray-100">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
           <h2 className="text-lg font-semibold text-gray-900">All Bills</h2>
         </div>
 
@@ -600,7 +603,7 @@ export default function ClerkDashboard() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {bills.map((bill) => (
-                  <tr key={bill.id} className="hover:bg-gray-50">
+                  <tr key={bill.id} className="hover:bg-green-50 transition-colors duration-150">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{bill.billNumber}</div>
                     </td>
@@ -629,7 +632,7 @@ export default function ClerkDashboard() {
                       {bill.outstandingAmount > 0 && bill.status !== 'CANCELLED' && (
                         <button
                           onClick={() => openPaymentModal(bill)}
-                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 transform hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                         >
                           <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

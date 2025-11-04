@@ -27,26 +27,26 @@ Already installed! The system is configured and ready to use in all pages.
 ### Import the Toast Functions
 
 ```typescript
-import { showToast } from '@/lib/toast';
+import { showToast } from "@/lib/toast";
 ```
 
 ### Show Simple Toasts
 
 ```typescript
 // Success toast
-showToast.success('Operation completed successfully!');
+showToast.success("Operation completed successfully!");
 
 // Error toast
-showToast.error('Something went wrong!');
+showToast.error("Something went wrong!");
 
 // Warning toast
-showToast.warning('Please check your input');
+showToast.warning("Please check your input");
 
 // Info toast
-showToast.info('Did you know...?');
+showToast.info("Did you know...?");
 
 // Loading toast
-const toastId = showToast.loading('Processing...');
+const toastId = showToast.loading("Processing...");
 // Later, dismiss it
 showToast.dismiss(toastId);
 ```
@@ -55,8 +55,8 @@ showToast.dismiss(toastId);
 
 ```typescript
 // Show for 5 seconds instead of default 4
-showToast.success('Saved!', 5000);
-showToast.error('Failed!', 6000);
+showToast.success("Saved!", 5000);
+showToast.error("Failed!", 6000);
 ```
 
 ## Advanced Usage
@@ -93,14 +93,14 @@ const handleSubmit = async () => {
 For promises, use `toastPromise`:
 
 ```typescript
-import { toastPromise } from '@/lib/toast';
+import { toastPromise } from "@/lib/toast";
 
-const saveData = fetch('/api/save', { method: 'POST' });
+const saveData = fetch("/api/save", { method: "POST" });
 
 toastPromise(saveData, {
-  loading: 'Saving...',
-  success: 'Saved successfully!',
-  error: 'Failed to save',
+  loading: "Saving...",
+  success: "Saved successfully!",
+  error: "Failed to save",
 });
 ```
 
@@ -139,13 +139,13 @@ const handleSubmit = async () => {
 Use predefined messages for consistency:
 
 ```typescript
-import { toastMessages } from '@/lib/toast';
+import { toastMessages } from "@/lib/toast";
 
 // CRUD operations
-showToast.success(toastMessages.created('Bill'));
-showToast.error(toastMessages.createError('Payment'));
-showToast.success(toastMessages.updated('Customer'));
-showToast.error(toastMessages.deleteError('Meter'));
+showToast.success(toastMessages.created("Bill"));
+showToast.error(toastMessages.createError("Payment"));
+showToast.success(toastMessages.updated("Customer"));
+showToast.error(toastMessages.deleteError("Meter"));
 
 // Auth operations
 showToast.success(toastMessages.loginSuccess());
@@ -163,16 +163,16 @@ showToast.error(toastMessages.networkError());
 For toasts with action buttons (like "Undo"), use the separate component:
 
 ```typescript
-import { showToastWithAction } from '@/components/ToastWithAction';
+import { showToastWithAction } from "@/components/ToastWithAction";
 
 showToastWithAction(
-  'Item deleted',
-  'Undo',
+  "Item deleted",
+  "Undo",
   () => {
     // Undo action
     restoreItem();
   },
-  { duration: 5000, type: 'success' }
+  { duration: 5000, type: "success" }
 );
 ```
 
@@ -181,24 +181,24 @@ showToastWithAction(
 ### Example 1: Form Submission (Clerk Dashboard)
 
 ```typescript
-import { showToast } from '@/lib/toast';
+import { showToast } from "@/lib/toast";
 
 const handleGenerateBill = async (e: React.FormEvent) => {
   e.preventDefault();
 
   if (!validateForm()) {
-    showToast.warning('Please fill in all required fields');
+    showToast.warning("Please fill in all required fields");
     return;
   }
 
-  const toastId = showToast.loading('Generating bill...');
+  const toastId = showToast.loading("Generating bill...");
 
   try {
-    const response = await fetch('/api/bills', {
-      method: 'POST',
+    const response = await fetch("/api/bills", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(formData),
     });
@@ -216,7 +216,7 @@ const handleGenerateBill = async (e: React.FormEvent) => {
     refreshData();
   } catch (error) {
     showToast.dismiss(toastId);
-    showToast.error(error.message || 'Failed to generate bill');
+    showToast.error(error.message || "Failed to generate bill");
   }
 };
 ```
@@ -224,31 +224,31 @@ const handleGenerateBill = async (e: React.FormEvent) => {
 ### Example 2: Meter Reading Submission
 
 ```typescript
-import { showToast } from '@/lib/toast';
+import { showToast } from "@/lib/toast";
 
 const handleSubmitReading = async (e: React.FormEvent) => {
   e.preventDefault();
 
   if (!validateReading()) {
-    showToast.warning('Please check the reading value');
+    showToast.warning("Please check the reading value");
     return;
   }
 
-  const toastId = showToast.loading('Submitting reading...');
+  const toastId = showToast.loading("Submitting reading...");
 
   try {
-    const response = await fetch('/api/readings', {
-      method: 'POST',
+    const response = await fetch("/api/readings", {
+      method: "POST",
       body: JSON.stringify(readingData),
     });
 
     showToast.dismiss(toastId);
 
     if (!response.ok) {
-      throw new Error('Failed to submit');
+      throw new Error("Failed to submit");
     }
 
-    showToast.success('Reading submitted successfully!');
+    showToast.success("Reading submitted successfully!");
     closeForm();
   } catch (error) {
     showToast.dismiss(toastId);
@@ -260,24 +260,24 @@ const handleSubmitReading = async (e: React.FormEvent) => {
 ### Example 3: Delete Confirmation
 
 ```typescript
-import { showToast } from '@/lib/toast';
-import { showToastWithAction } from '@/components/ToastWithAction';
+import { showToast } from "@/lib/toast";
+import { showToastWithAction } from "@/components/ToastWithAction";
 
 const handleDelete = async (id: string) => {
-  const toastId = showToast.loading('Deleting...');
+  const toastId = showToast.loading("Deleting...");
 
   try {
-    await fetch(`/api/items/${id}`, { method: 'DELETE' });
+    await fetch(`/api/items/${id}`, { method: "DELETE" });
 
     showToast.dismiss(toastId);
 
     // Show success with undo option
     showToastWithAction(
-      'Item deleted',
-      'Undo',
+      "Item deleted",
+      "Undo",
       async () => {
-        await fetch(`/api/items/${id}/restore`, { method: 'POST' });
-        showToast.success('Item restored');
+        await fetch(`/api/items/${id}/restore`, { method: "POST" });
+        showToast.success("Item restored");
         refreshData();
       },
       { duration: 5000 }
@@ -286,7 +286,7 @@ const handleDelete = async (id: string) => {
     refreshData();
   } catch (error) {
     showToast.dismiss(toastId);
-    showToast.error('Failed to delete item');
+    showToast.error("Failed to delete item");
   }
 };
 ```
@@ -294,17 +294,17 @@ const handleDelete = async (id: string) => {
 ### Example 4: Batch Operations
 
 ```typescript
-import { showToast } from '@/lib/toast';
+import { showToast } from "@/lib/toast";
 
 const handleBatchUpdate = async (items: string[]) => {
   const toastId = showToast.loading(`Updating ${items.length} items...`);
 
   try {
     const results = await Promise.all(
-      items.map(id => fetch(`/api/items/${id}`, { method: 'PATCH' }))
+      items.map((id) => fetch(`/api/items/${id}`, { method: "PATCH" }))
     );
 
-    const successCount = results.filter(r => r.ok).length;
+    const successCount = results.filter((r) => r.ok).length;
     const failCount = items.length - successCount;
 
     showToast.dismiss(toastId);
@@ -319,7 +319,7 @@ const handleBatchUpdate = async (items: string[]) => {
     }
   } catch (error) {
     showToast.dismiss(toastId);
-    showToast.error('Batch update failed');
+    showToast.error("Batch update failed");
   }
 };
 ```
@@ -341,10 +341,9 @@ Change in `ToastProvider.tsx`:
 
 ```typescript
 // Default duration (in toast.ts)
-duration: 4000,  // 4 seconds
-
-// Per toast
-showToast.success('Message', 5000);  // 5 seconds
+duration: 4000, // 4 seconds
+  // Per toast
+  showToast.success("Message", 5000); // 5 seconds
 ```
 
 ### Custom Styles
@@ -387,13 +386,13 @@ toastOptions={{
 
 ## Toast Types Reference
 
-| Type | Use Case | Icon | Color |
-|------|----------|------|-------|
-| `success` | Operation completed successfully | ✓ | Green |
-| `error` | Operation failed | ✗ | Red |
-| `loading` | Operation in progress | ⟳ | Blue |
-| `warning` | User should be aware of something | ⚠ | Orange |
-| `info` | General information | ℹ | Blue |
+| Type      | Use Case                          | Icon | Color  |
+| --------- | --------------------------------- | ---- | ------ |
+| `success` | Operation completed successfully  | ✓    | Green  |
+| `error`   | Operation failed                  | ✗    | Red    |
+| `loading` | Operation in progress             | ⟳    | Blue   |
+| `warning` | User should be aware of something | ⚠    | Orange |
+| `info`    | General information               | ℹ    | Blue   |
 
 ## API Reference
 
@@ -459,22 +458,22 @@ showToastWithAction(
 ```typescript
 try {
   await submitForm();
-  alert('Success!');
+  alert("Success!");
 } catch (error) {
-  alert('Error: ' + error.message);
+  alert("Error: " + error.message);
 }
 ```
 
 ### After (Toast-based)
 
 ```typescript
-import { showToast } from '@/lib/toast';
+import { showToast } from "@/lib/toast";
 
 try {
   await submitForm();
-  showToast.success('Success!');
+  showToast.success("Success!");
 } catch (error) {
-  showToast.error('Error: ' + error.message);
+  showToast.error("Error: " + error.message);
 }
 ```
 
@@ -499,6 +498,7 @@ try {
 ## Summary
 
 The toast notification system provides:
+
 - ✅ Beautiful, animated notifications
 - ✅ Multiple toast types (success, error, warning, info, loading)
 - ✅ Easy-to-use API
