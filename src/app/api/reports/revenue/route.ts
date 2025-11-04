@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
-import { StaffRole } from '@/generated/prisma';
 
 // GET revenue report
 export async function GET(request: NextRequest) {
-  const authResult = await requireAuth(request, [StaffRole.ADMIN, StaffRole.MANAGER]);
+  const authResult = await requireAuth(request, ['ADMIN', 'MANAGER']);
   if (authResult instanceof Response) return authResult;
 
   try {

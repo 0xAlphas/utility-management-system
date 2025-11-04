@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, FormEvent, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { setAuthData, getDefaultRouteForRole } from '@/lib/auth-client';
 
 interface LoginResponse {
   token: string;
@@ -16,10 +17,34 @@ interface LoginResponse {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Get redirect URL from query params
+  const redirectUrl = searchParams.get('redirect');
+
+  useEffect(() => {
+    // Clear any stale auth data when visiting login page
+    const token = localStorage.getItem('token');
+    if (token) {
+      // User is already logged in, redirect to their dashboard
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          const defaultRoute = getDefaultRouteForRole(user.role);
+          router.push(defaultRoute);
+        } catch (e) {
+          // Invalid user data, clear it
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      }
+    }
+  }, [router]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -43,20 +68,16 @@ export default function LoginPage() {
 
       const loginData = data as LoginResponse;
 
-      // Save token to localStorage
-      localStorage.setItem('token', loginData.token);
-      localStorage.setItem('user', JSON.stringify(loginData.user));
+      // Save token and user data to localStorage AND cookies
+      setAuthData(loginData.token, loginData.user);
 
-      // Redirect based on role
-      const roleRoutes = {
-        ADMIN: '/dashboard/admin',
-        CLERK: '/dashboard/clerk',
-        METER_READER: '/dashboard/reader',
-        MANAGER: '/dashboard/manager',
-      };
-
-      const redirectPath = roleRoutes[loginData.user.role];
-      router.push(redirectPath);
+      // Redirect to requested page or default dashboard
+      if (redirectUrl && redirectUrl.startsWith('/dashboard')) {
+        router.push(redirectUrl);
+      } else {
+        const defaultRoute = getDefaultRouteForRole(loginData.user.role);
+        router.push(defaultRoute);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during login');
     } finally {
