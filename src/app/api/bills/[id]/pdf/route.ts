@@ -41,11 +41,20 @@ export async function GET(
       );
     }
 
+    console.log('Bill data:', {
+      billNumber: bill.billNumber,
+      customerName: bill.customer.name,
+      status: bill.status,
+      hasRemarks: !!bill.remarks,
+    });
+
     // Parse bill details from remarks
     let billDetails: any[] = [];
     try {
       billDetails = bill.remarks ? JSON.parse(bill.remarks) : [];
+      console.log('Bill details count:', billDetails.length);
     } catch (e) {
+      console.error('Error parsing bill remarks:', e);
       billDetails = [];
     }
 
@@ -68,14 +77,21 @@ export async function GET(
         return '';
       }
       // Convert to string and remove any characters that might cause issues
-      return String(value)
+      const str = String(value);
+      // Replace problematic characters with safe alternatives
+      return str
         .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
+        .replace(/[\u2018\u2019]/g, "'") // Replace smart quotes
+        .replace(/[\u201C\u201D]/g, '"') // Replace smart double quotes
+        .replace(/[\u2013\u2014]/g, '-') // Replace em/en dashes
+        .replace(/[\u2026]/g, '...') // Replace ellipsis
+        .replace(/[^\x20-\x7E]/g, '') // Keep only printable ASCII
         .trim();
     };
 
-    // Helper function to draw text
+    // Helper function to draw text - ALWAYS sanitize before calling
     const drawText = (
-      text: string | number | null | undefined,
+      text: string,
       x: number,
       y: number,
       options: {
@@ -85,17 +101,32 @@ export async function GET(
         maxWidth?: number;
       } = {}
     ) => {
-      const sanitized = sanitizeText(text);
-      if (!sanitized) return; // Don't draw empty text
+      if (!text || text.length === 0) return; // Don't draw empty text
 
-      page.drawText(sanitized, {
-        x,
-        y,
-        size: options.size || 12,
-        font: options.font || regularFont,
-        color: options.color || rgb(0, 0, 0),
-        maxWidth: options.maxWidth || width - 2 * margin,
-      });
+      try {
+        page.drawText(text, {
+          x,
+          y,
+          size: options.size || 12,
+          font: options.font || regularFont,
+          color: options.color || rgb(0, 0, 0),
+          maxWidth: options.maxWidth || width - 2 * margin,
+        });
+      } catch (error) {
+        console.error('Error drawing text:', text, error);
+        // Try to draw a placeholder instead
+        try {
+          page.drawText('[Error]', {
+            x,
+            y,
+            size: options.size || 12,
+            font: options.font || regularFont,
+            color: rgb(1, 0, 0),
+          });
+        } catch (e) {
+          // Ignore if even placeholder fails
+        }
+      }
     };
 
     // Helper function to draw line
@@ -109,224 +140,289 @@ export async function GET(
     };
 
     // Header Section
-    drawText('UTILITY MANAGEMENT SYSTEM', margin, yPosition, {
-      size: 20,
-      font: boldFont,
-    });
-    yPosition -= lineHeight * 1.5;
-
-    drawText('Bill Invoice', margin, yPosition, {
-      size: 14,
-      font: boldFont,
-    });
-    yPosition -= lineHeight;
-
-    // Bill Info (Right aligned)
-    const rightX = width - margin - 150;
-    drawText(`Bill No: ${bill.billNumber}`, rightX, yPosition + lineHeight, {
-      font: boldFont,
-    });
-    drawText(
-      `Date: ${new Date(bill.issueDate).toLocaleDateString()}`,
-      rightX,
-      yPosition
-    );
-    yPosition -= lineHeight * 2;
-
-    drawLine(yPosition);
-    yPosition -= lineHeight * 1.5;
-
-    // Customer Section
-    drawText('BILL TO:', margin, yPosition, {
-      size: 14,
-      font: boldFont,
-    });
-    yPosition -= lineHeight * 1.2;
-
-    drawText(bill.customer.name || 'N/A', margin, yPosition, {
-      font: boldFont,
-      size: 11,
-    });
-    yPosition -= lineHeight * 0.8;
-
-    drawText(`Customer Type: ${bill.customer.type || 'N/A'}`, margin, yPosition, {
-      size: 10,
-    });
-    yPosition -= lineHeight * 0.8;
-
-    if (bill.customer.address) {
-      const addressParts = [];
-      if (bill.customer.address) addressParts.push(bill.customer.address);
-      if (bill.customer.city) addressParts.push(bill.customer.city);
-      const addressLine = addressParts.join(', ');
-
-      if (addressLine) {
-        if (bill.customer.postalCode) {
-          drawText(`${addressLine} - ${bill.customer.postalCode}`, margin, yPosition, {
-            size: 10,
-          });
-        } else {
-          drawText(addressLine, margin, yPosition, { size: 10 });
-        }
-        yPosition -= lineHeight * 0.8;
-      }
-    }
-
-    if (bill.customer.contact) {
-      drawText(`Contact: ${bill.customer.contact}`, margin, yPosition, {
-        size: 10,
+    try {
+      console.log('Drawing header section...');
+      drawText('UTILITY MANAGEMENT SYSTEM', margin, yPosition, {
+        size: 20,
+        font: boldFont,
       });
-      yPosition -= lineHeight * 0.8;
-    }
+      yPosition -= lineHeight * 1.5;
 
-    if (bill.customer.email) {
-      drawText(`Email: ${bill.customer.email}`, margin, yPosition, {
-        size: 10,
+      drawText('Bill Invoice', margin, yPosition, {
+        size: 14,
+        font: boldFont,
       });
-      yPosition -= lineHeight * 0.8;
-    }
-
-    yPosition -= lineHeight;
-
-    // Billing Period
-    drawText('BILLING PERIOD:', margin, yPosition, {
-      size: 14,
-      font: boldFont,
-    });
-    yPosition -= lineHeight * 1.2;
-
-    const monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    drawText(
-      `${monthNames[bill.billingMonth - 1]} ${bill.billingYear}`,
-      margin,
-      yPosition,
-      { size: 11 }
-    );
-    yPosition -= lineHeight * 1.5;
-
-    drawLine(yPosition);
-    yPosition -= lineHeight * 1.5;
-
-    // Utility Details Section
-    drawText('CONSUMPTION DETAILS:', margin, yPosition, {
-      size: 14,
-      font: boldFont,
-    });
-    yPosition -= lineHeight * 1.5;
-
-    // Table headers
-    const colX = {
-      utility: margin,
-      meter: margin + 120,
-      previous: margin + 220,
-      current: margin + 310,
-      usage: margin + 390,
-      amount: margin + 450,
-    };
-
-    // Header row with background
-    page.drawRectangle({
-      x: margin,
-      y: yPosition - 5,
-      width: width - 2 * margin,
-      height: lineHeight,
-      color: rgb(0.95, 0.95, 0.95),
-    });
-
-    drawText('Utility Type', colX.utility + 5, yPosition, {
-      font: boldFont,
-      size: 10,
-    });
-    drawText('Meter No.', colX.meter, yPosition, {
-      font: boldFont,
-      size: 10,
-    });
-    drawText('Previous', colX.previous, yPosition, {
-      font: boldFont,
-      size: 10,
-    });
-    drawText('Current', colX.current, yPosition, {
-      font: boldFont,
-      size: 10,
-    });
-    drawText('Usage', colX.usage, yPosition, {
-      font: boldFont,
-      size: 10,
-    });
-    drawText('Amount', colX.amount, yPosition, {
-      font: boldFont,
-      size: 10,
-    });
-    yPosition -= lineHeight * 1.2;
-
-    // Bill details rows
-    for (const detail of billDetails) {
-      drawText(detail.utilityType || 'N/A', colX.utility + 5, yPosition, {
-        size: 10,
-      });
-      drawText(detail.meterNumber || 'N/A', colX.meter, yPosition, {
-        size: 10,
-      });
-
-      const prevReading = typeof detail.previousReading === 'number'
-        ? detail.previousReading.toFixed(2)
-        : '0.00';
-      drawText(prevReading, colX.previous, yPosition, { size: 10 });
-
-      const currReading = typeof detail.currentReading === 'number'
-        ? detail.currentReading.toFixed(2)
-        : '0.00';
-      drawText(currReading, colX.current, yPosition, { size: 10 });
-
-      const consumption = typeof detail.consumption === 'number'
-        ? detail.consumption.toFixed(2)
-        : '0.00';
-      drawText(consumption, colX.usage, yPosition, { size: 10 });
-
-      const amount = typeof detail.amount === 'number'
-        ? detail.amount.toFixed(2)
-        : '0.00';
-      drawText(`Rs. ${amount}`, colX.amount, yPosition, { size: 10 });
-
       yPosition -= lineHeight;
 
-      // If there's a breakdown, show it
-      if (detail.breakdown && Array.isArray(detail.breakdown) && detail.breakdown.length > 0) {
-        for (const slab of detail.breakdown) {
-          const slabName = slab.slabName || 'Unknown';
-          const slabUnits = typeof slab.units === 'number' ? slab.units.toFixed(2) : '0.00';
-          const slabRate = typeof slab.rate === 'number' ? slab.rate.toFixed(2) : '0.00';
-          const slabAmount = typeof slab.amount === 'number' ? slab.amount.toFixed(2) : '0.00';
+      // Bill Info (Right aligned)
+      const rightX = width - margin - 150;
+      const billNum = sanitizeText(bill.billNumber || 'N/A');
+      console.log('Bill number:', billNum);
+      drawText(sanitizeText('Bill No: ' + billNum), rightX, yPosition + lineHeight, {
+        font: boldFont,
+      });
 
-          drawText(
-            `  ${slabName}: ${slabUnits} units @ Rs. ${slabRate} = Rs. ${slabAmount}`,
-            colX.utility + 10,
-            yPosition,
-            { size: 8, color: rgb(0.4, 0.4, 0.4) }
-          );
+      const issueDate = bill.issueDate
+        ? new Date(bill.issueDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          })
+        : 'N/A';
+      console.log('Issue date:', issueDate);
+      drawText(sanitizeText('Date: ' + issueDate), rightX, yPosition);
+      yPosition -= lineHeight * 2;
+
+      drawLine(yPosition);
+      yPosition -= lineHeight * 1.5;
+      console.log('Header section completed');
+    } catch (error) {
+      console.error('Error in header section:', error);
+      throw new Error(`Header section error: ${error}`);
+    }
+
+    // Customer Section
+    try {
+      console.log('Drawing customer section...');
+      drawText('BILL TO:', margin, yPosition, {
+        size: 14,
+        font: boldFont,
+      });
+      yPosition -= lineHeight * 1.2;
+
+      const customerName = sanitizeText(bill.customer.name || 'N/A');
+      console.log('Customer name:', customerName);
+      drawText(customerName, margin, yPosition, {
+        font: boldFont,
+        size: 11,
+      });
+      yPosition -= lineHeight * 0.8;
+
+      const customerType = sanitizeText(bill.customer.type || 'N/A');
+      drawText(sanitizeText('Customer Type: ' + customerType), margin, yPosition, {
+        size: 10,
+      });
+      yPosition -= lineHeight * 0.8;
+
+      if (bill.customer.address) {
+        const addressParts = [];
+        if (bill.customer.address) addressParts.push(sanitizeText(bill.customer.address));
+        if (bill.customer.city) addressParts.push(sanitizeText(bill.customer.city));
+        const addressLine = addressParts.join(', ');
+
+        if (addressLine) {
+          if (bill.customer.postalCode) {
+            const fullAddress = addressLine + ' - ' + sanitizeText(bill.customer.postalCode);
+            drawText(sanitizeText(fullAddress), margin, yPosition, {
+              size: 10,
+            });
+          } else {
+            drawText(addressLine, margin, yPosition, { size: 10 });
+          }
           yPosition -= lineHeight * 0.8;
         }
       }
 
-      yPosition -= lineHeight * 0.3;
+      if (bill.customer.contact) {
+        const contactText = 'Contact: ' + sanitizeText(bill.customer.contact);
+        drawText(sanitizeText(contactText), margin, yPosition, {
+          size: 10,
+        });
+        yPosition -= lineHeight * 0.8;
+      }
+
+      if (bill.customer.email) {
+        const emailText = 'Email: ' + sanitizeText(bill.customer.email);
+        drawText(sanitizeText(emailText), margin, yPosition, {
+          size: 10,
+        });
+        yPosition -= lineHeight * 0.8;
+      }
+
+      yPosition -= lineHeight;
+      console.log('Customer section completed');
+    } catch (error) {
+      console.error('Error in customer section:', error);
+      throw new Error(`Customer section error: ${error}`);
     }
 
-    yPosition -= lineHeight * 0.5;
-    drawLine(yPosition);
-    yPosition -= lineHeight * 1.2;
+    // Billing Period
+    try {
+      console.log('Drawing billing period section...');
+      drawText('BILLING PERIOD:', margin, yPosition, {
+        size: 14,
+        font: boldFont,
+      });
+      yPosition -= lineHeight * 1.2;
+
+      const monthNames = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ];
+      const monthIndex = (bill.billingMonth || 1) - 1;
+      const monthName = monthNames[Math.max(0, Math.min(11, monthIndex))] || 'Unknown';
+      const year = bill.billingYear || new Date().getFullYear();
+      const periodText = monthName + ' ' + String(year);
+      console.log('Billing period:', periodText);
+
+      drawText(sanitizeText(periodText), margin, yPosition, { size: 11 });
+      yPosition -= lineHeight * 1.5;
+
+      drawLine(yPosition);
+      yPosition -= lineHeight * 1.5;
+      console.log('Billing period section completed');
+    } catch (error) {
+      console.error('Error in billing period section:', error);
+      throw new Error(`Billing period section error: ${error}`);
+    }
+
+    // Utility Details Section
+    try {
+      console.log('Drawing consumption details section...');
+      drawText('CONSUMPTION DETAILS:', margin, yPosition, {
+        size: 14,
+        font: boldFont,
+      });
+      yPosition -= lineHeight * 1.5;
+
+      // Table headers
+      const colX = {
+        utility: margin,
+        meter: margin + 120,
+        previous: margin + 220,
+        current: margin + 310,
+        usage: margin + 390,
+        amount: margin + 450,
+      };
+
+      // Header row with background
+      page.drawRectangle({
+        x: margin,
+        y: yPosition - 5,
+        width: width - 2 * margin,
+        height: lineHeight,
+        color: rgb(0.95, 0.95, 0.95),
+      });
+
+      drawText('Utility Type', colX.utility + 5, yPosition, {
+        font: boldFont,
+        size: 10,
+      });
+      drawText('Meter No.', colX.meter, yPosition, {
+        font: boldFont,
+        size: 10,
+      });
+      drawText('Previous', colX.previous, yPosition, {
+        font: boldFont,
+        size: 10,
+      });
+      drawText('Current', colX.current, yPosition, {
+        font: boldFont,
+        size: 10,
+      });
+      drawText('Usage', colX.usage, yPosition, {
+        font: boldFont,
+        size: 10,
+      });
+      drawText('Amount', colX.amount, yPosition, {
+        font: boldFont,
+        size: 10,
+      });
+      yPosition -= lineHeight * 1.2;
+      console.log('Table header completed');
+    } catch (error) {
+      console.error('Error in consumption details header:', error);
+      throw new Error(`Consumption details header error: ${error}`);
+    }
+
+    // Bill details rows
+    try {
+      console.log('Drawing bill details rows, count:', billDetails.length);
+      const colX = {
+        utility: margin,
+        meter: margin + 120,
+        previous: margin + 220,
+        current: margin + 310,
+        usage: margin + 390,
+        amount: margin + 450,
+      };
+
+      for (let i = 0; i < billDetails.length; i++) {
+        const detail = billDetails[i];
+        console.log(`Processing detail ${i + 1}:`, {
+          utilityType: detail.utilityType,
+          meterNumber: detail.meterNumber,
+        });
+
+        drawText(sanitizeText(detail.utilityType || 'N/A'), colX.utility + 5, yPosition, {
+          size: 10,
+        });
+        drawText(sanitizeText(detail.meterNumber || 'N/A'), colX.meter, yPosition, {
+          size: 10,
+        });
+
+        const prevReading = typeof detail.previousReading === 'number'
+          ? detail.previousReading.toFixed(2)
+          : '0.00';
+        drawText(prevReading, colX.previous, yPosition, { size: 10 });
+
+        const currReading = typeof detail.currentReading === 'number'
+          ? detail.currentReading.toFixed(2)
+          : '0.00';
+        drawText(currReading, colX.current, yPosition, { size: 10 });
+
+        const consumption = typeof detail.consumption === 'number'
+          ? detail.consumption.toFixed(2)
+          : '0.00';
+        drawText(consumption, colX.usage, yPosition, { size: 10 });
+
+        const amount = typeof detail.amount === 'number'
+          ? detail.amount.toFixed(2)
+          : '0.00';
+        drawText(sanitizeText('Rs. ' + amount), colX.amount, yPosition, { size: 10 });
+
+        yPosition -= lineHeight;
+
+        // If there's a breakdown, show it
+        if (detail.breakdown && Array.isArray(detail.breakdown) && detail.breakdown.length > 0) {
+          console.log(`Detail ${i + 1} has ${detail.breakdown.length} slabs`);
+          for (let j = 0; j < detail.breakdown.length; j++) {
+            const slab = detail.breakdown[j];
+            const slabName = sanitizeText(slab.slabName || 'Unknown');
+            const slabUnits = typeof slab.units === 'number' ? slab.units.toFixed(2) : '0.00';
+            const slabRate = typeof slab.rate === 'number' ? slab.rate.toFixed(2) : '0.00';
+            const slabAmount = typeof slab.amount === 'number' ? slab.amount.toFixed(2) : '0.00';
+
+            const slabText = '  ' + slabName + ': ' + slabUnits + ' units @ Rs. ' + slabRate + ' = Rs. ' + slabAmount;
+            drawText(sanitizeText(slabText), colX.utility + 10, yPosition, {
+              size: 8,
+              color: rgb(0.4, 0.4, 0.4),
+            });
+            yPosition -= lineHeight * 0.8;
+          }
+        }
+
+        yPosition -= lineHeight * 0.3;
+      }
+
+      yPosition -= lineHeight * 0.5;
+      drawLine(yPosition);
+      yPosition -= lineHeight * 1.2;
+      console.log('Bill details rows completed');
+    } catch (error) {
+      console.error('Error in bill details rows:', error);
+      throw new Error(`Bill details rows error: ${error}`);
+    }
 
     // Summary Section
     const totalConsumption = typeof bill.consumption === 'number'
@@ -347,7 +443,7 @@ export async function GET(
       size: 11,
     });
     drawText(
-      `${totalConsumption} units`,
+      sanitizeText(totalConsumption + ' units'),
       colX.amount,
       yPosition,
       { font: boldFont, size: 11 }
@@ -359,7 +455,7 @@ export async function GET(
       size: 12,
     });
     drawText(
-      `Rs. ${totalAmount}`,
+      sanitizeText('Rs. ' + totalAmount),
       colX.amount,
       yPosition,
       { font: boldFont, size: 12 }
@@ -373,7 +469,7 @@ export async function GET(
         color: rgb(0, 0.6, 0),
       });
       drawText(
-        `Rs. ${paidAmount}`,
+        sanitizeText('Rs. ' + paidAmount),
         colX.amount,
         yPosition,
         { font: boldFont, size: 11, color: rgb(0, 0.6, 0) }
@@ -388,7 +484,7 @@ export async function GET(
         color: rgb(0.8, 0, 0),
       });
       drawText(
-        `Rs. ${outstandingAmount}`,
+        sanitizeText('Rs. ' + outstandingAmount),
         colX.amount,
         yPosition,
         { font: boldFont, size: 11, color: rgb(0.8, 0, 0) }
@@ -400,7 +496,7 @@ export async function GET(
       ? new Date(bill.dueDate).toLocaleDateString()
       : 'N/A';
     drawText(
-      `Due Date: ${dueDate}`,
+      sanitizeText('Due Date: ' + dueDate),
       margin,
       yPosition,
       { font: boldFont, size: 10 }
@@ -447,10 +543,10 @@ export async function GET(
           const paymentAmount = typeof payment.amount === 'number'
             ? payment.amount.toFixed(2)
             : '0.00';
-          const paymentMethod = payment.method || 'N/A';
+          const paymentMethod = sanitizeText(payment.method || 'N/A');
 
-          const paymentText = `${paymentDate} - Rs. ${paymentAmount} (${paymentMethod})`;
-          drawText(paymentText, margin + 10, yPosition, {
+          const paymentText = paymentDate + ' - Rs. ' + paymentAmount + ' (' + paymentMethod + ')';
+          drawText(sanitizeText(paymentText), margin + 10, yPosition, {
             size: 9,
             color: rgb(0.3, 0.3, 0.3),
           });
