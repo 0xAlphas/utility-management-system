@@ -231,6 +231,48 @@ export default function ClerkDashboard() {
     setFormErrors({});
   };
 
+  const downloadBillPDF = async (billId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/bills/${billId}/pdf`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF');
+      }
+
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'bill.pdf';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Convert response to blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      showToast('success', 'PDF downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      showToast('error', 'Failed to download PDF');
+    }
+  };
+
   const validateBillForm = (): boolean => {
     const errors: { customerId?: string; billingMonth?: string } = {};
 
@@ -629,17 +671,29 @@ export default function ClerkDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(bill.status)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {bill.outstandingAmount > 0 && bill.status !== 'CANCELLED' && (
+                      <div className="flex gap-2">
                         <button
-                          onClick={() => openPaymentModal(bill)}
-                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 transform hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                          onClick={() => downloadBillPDF(bill.id)}
+                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          title="Download PDF"
                         >
                           <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
-                          Add Payment
+                          PDF
                         </button>
-                      )}
+                        {bill.outstandingAmount > 0 && bill.status !== 'CANCELLED' && (
+                          <button
+                            onClick={() => openPaymentModal(bill)}
+                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 transform hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                          >
+                            <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Payment
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
