@@ -62,9 +62,20 @@ export async function GET(
     const margin = 50;
     const lineHeight = 20;
 
+    // Helper function to sanitize and ensure text is valid for PDF
+    const sanitizeText = (value: any): string => {
+      if (value === null || value === undefined) {
+        return '';
+      }
+      // Convert to string and remove any characters that might cause issues
+      return String(value)
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
+        .trim();
+    };
+
     // Helper function to draw text
     const drawText = (
-      text: string,
+      text: string | number | null | undefined,
       x: number,
       y: number,
       options: {
@@ -74,7 +85,10 @@ export async function GET(
         maxWidth?: number;
       } = {}
     ) => {
-      page.drawText(text, {
+      const sanitized = sanitizeText(text);
+      if (!sanitized) return; // Don't draw empty text
+
+      page.drawText(sanitized, {
         x,
         y,
         size: options.size || 12,
@@ -129,29 +143,33 @@ export async function GET(
     });
     yPosition -= lineHeight * 1.2;
 
-    drawText(`${bill.customer.name}`, margin, yPosition, {
+    drawText(bill.customer.name || 'N/A', margin, yPosition, {
       font: boldFont,
       size: 11,
     });
     yPosition -= lineHeight * 0.8;
 
-    drawText(`Customer Type: ${bill.customer.type}`, margin, yPosition, {
+    drawText(`Customer Type: ${bill.customer.type || 'N/A'}`, margin, yPosition, {
       size: 10,
     });
     yPosition -= lineHeight * 0.8;
 
     if (bill.customer.address) {
-      const addressLine = bill.customer.city
-        ? `${bill.customer.address}, ${bill.customer.city}`
-        : bill.customer.address;
-      if (bill.customer.postalCode) {
-        drawText(`${addressLine} - ${bill.customer.postalCode}`, margin, yPosition, {
-          size: 10,
-        });
-      } else {
-        drawText(addressLine, margin, yPosition, { size: 10 });
+      const addressParts = [];
+      if (bill.customer.address) addressParts.push(bill.customer.address);
+      if (bill.customer.city) addressParts.push(bill.customer.city);
+      const addressLine = addressParts.join(', ');
+
+      if (addressLine) {
+        if (bill.customer.postalCode) {
+          drawText(`${addressLine} - ${bill.customer.postalCode}`, margin, yPosition, {
+            size: 10,
+          });
+        } else {
+          drawText(addressLine, margin, yPosition, { size: 10 });
+        }
+        yPosition -= lineHeight * 0.8;
       }
-      yPosition -= lineHeight * 0.8;
     }
 
     if (bill.customer.contact) {
@@ -262,37 +280,39 @@ export async function GET(
       drawText(detail.meterNumber || 'N/A', colX.meter, yPosition, {
         size: 10,
       });
-      drawText(
-        detail.previousReading?.toFixed(2) || '0',
-        colX.previous,
-        yPosition,
-        { size: 10 }
-      );
-      drawText(
-        detail.currentReading?.toFixed(2) || '0',
-        colX.current,
-        yPosition,
-        { size: 10 }
-      );
-      drawText(
-        detail.consumption?.toFixed(2) || '0',
-        colX.usage,
-        yPosition,
-        { size: 10 }
-      );
-      drawText(
-        `Rs. ${detail.amount?.toFixed(2) || '0.00'}`,
-        colX.amount,
-        yPosition,
-        { size: 10 }
-      );
+
+      const prevReading = typeof detail.previousReading === 'number'
+        ? detail.previousReading.toFixed(2)
+        : '0.00';
+      drawText(prevReading, colX.previous, yPosition, { size: 10 });
+
+      const currReading = typeof detail.currentReading === 'number'
+        ? detail.currentReading.toFixed(2)
+        : '0.00';
+      drawText(currReading, colX.current, yPosition, { size: 10 });
+
+      const consumption = typeof detail.consumption === 'number'
+        ? detail.consumption.toFixed(2)
+        : '0.00';
+      drawText(consumption, colX.usage, yPosition, { size: 10 });
+
+      const amount = typeof detail.amount === 'number'
+        ? detail.amount.toFixed(2)
+        : '0.00';
+      drawText(`Rs. ${amount}`, colX.amount, yPosition, { size: 10 });
+
       yPosition -= lineHeight;
 
       // If there's a breakdown, show it
-      if (detail.breakdown && detail.breakdown.length > 0) {
+      if (detail.breakdown && Array.isArray(detail.breakdown) && detail.breakdown.length > 0) {
         for (const slab of detail.breakdown) {
+          const slabName = slab.slabName || 'Unknown';
+          const slabUnits = typeof slab.units === 'number' ? slab.units.toFixed(2) : '0.00';
+          const slabRate = typeof slab.rate === 'number' ? slab.rate.toFixed(2) : '0.00';
+          const slabAmount = typeof slab.amount === 'number' ? slab.amount.toFixed(2) : '0.00';
+
           drawText(
-            `  ${slab.slabName}: ${slab.units.toFixed(2)} units @ Rs. ${slab.rate.toFixed(2)} = Rs. ${slab.amount.toFixed(2)}`,
+            `  ${slabName}: ${slabUnits} units @ Rs. ${slabRate} = Rs. ${slabAmount}`,
             colX.utility + 10,
             yPosition,
             { size: 8, color: rgb(0.4, 0.4, 0.4) }
@@ -309,12 +329,25 @@ export async function GET(
     yPosition -= lineHeight * 1.2;
 
     // Summary Section
+    const totalConsumption = typeof bill.consumption === 'number'
+      ? bill.consumption.toFixed(2)
+      : '0.00';
+    const totalAmount = typeof bill.totalAmount === 'number'
+      ? bill.totalAmount.toFixed(2)
+      : '0.00';
+    const paidAmount = typeof bill.paidAmount === 'number'
+      ? bill.paidAmount.toFixed(2)
+      : '0.00';
+    const outstandingAmount = typeof bill.outstandingAmount === 'number'
+      ? bill.outstandingAmount.toFixed(2)
+      : '0.00';
+
     drawText('Total Consumption:', margin, yPosition, {
       font: boldFont,
       size: 11,
     });
     drawText(
-      `${bill.consumption.toFixed(2)} units`,
+      `${totalConsumption} units`,
       colX.amount,
       yPosition,
       { font: boldFont, size: 11 }
@@ -326,7 +359,7 @@ export async function GET(
       size: 12,
     });
     drawText(
-      `Rs. ${bill.totalAmount.toFixed(2)}`,
+      `Rs. ${totalAmount}`,
       colX.amount,
       yPosition,
       { font: boldFont, size: 12 }
@@ -340,7 +373,7 @@ export async function GET(
         color: rgb(0, 0.6, 0),
       });
       drawText(
-        `Rs. ${bill.paidAmount.toFixed(2)}`,
+        `Rs. ${paidAmount}`,
         colX.amount,
         yPosition,
         { font: boldFont, size: 11, color: rgb(0, 0.6, 0) }
@@ -355,7 +388,7 @@ export async function GET(
         color: rgb(0.8, 0, 0),
       });
       drawText(
-        `Rs. ${bill.outstandingAmount.toFixed(2)}`,
+        `Rs. ${outstandingAmount}`,
         colX.amount,
         yPosition,
         { font: boldFont, size: 11, color: rgb(0.8, 0, 0) }
@@ -363,8 +396,11 @@ export async function GET(
       yPosition -= lineHeight * 1.2;
     }
 
+    const dueDate = bill.dueDate
+      ? new Date(bill.dueDate).toLocaleDateString()
+      : 'N/A';
     drawText(
-      `Due Date: ${new Date(bill.dueDate).toLocaleDateString()}`,
+      `Due Date: ${dueDate}`,
       margin,
       yPosition,
       { font: boldFont, size: 10 }
@@ -375,10 +411,11 @@ export async function GET(
     yPosition -= lineHeight * 1.5;
 
     // Payment Status Section
+    const billStatus = bill.status || 'UNPAID';
     const statusColor =
-      bill.status === 'PAID'
+      billStatus === 'PAID'
         ? rgb(0, 0.6, 0)
-        : bill.status === 'OVERDUE'
+        : billStatus === 'OVERDUE'
         ? rgb(0.8, 0, 0)
         : rgb(0.8, 0.5, 0);
 
@@ -386,7 +423,7 @@ export async function GET(
       font: boldFont,
       size: 14,
     });
-    drawText(bill.status, margin + 150, yPosition, {
+    drawText(billStatus, margin + 150, yPosition, {
       font: boldFont,
       size: 14,
       color: statusColor,
@@ -394,7 +431,7 @@ export async function GET(
     yPosition -= lineHeight * 1.5;
 
     // Payment History
-    if (bill.payments.length > 0) {
+    if (bill.payments && Array.isArray(bill.payments) && bill.payments.length > 0) {
       drawText('Payment History:', margin, yPosition, {
         font: boldFont,
         size: 11,
@@ -403,13 +440,25 @@ export async function GET(
 
       for (const payment of bill.payments.slice(0, 5)) {
         // Show last 5 payments
-        const paymentDate = new Date(payment.paymentDate).toLocaleDateString();
-        const paymentText = `${paymentDate} - Rs. ${payment.amount.toFixed(2)} (${payment.method})`;
-        drawText(paymentText, margin + 10, yPosition, {
-          size: 9,
-          color: rgb(0.3, 0.3, 0.3),
-        });
-        yPosition -= lineHeight * 0.8;
+        try {
+          const paymentDate = payment.paymentDate
+            ? new Date(payment.paymentDate).toLocaleDateString()
+            : 'N/A';
+          const paymentAmount = typeof payment.amount === 'number'
+            ? payment.amount.toFixed(2)
+            : '0.00';
+          const paymentMethod = payment.method || 'N/A';
+
+          const paymentText = `${paymentDate} - Rs. ${paymentAmount} (${paymentMethod})`;
+          drawText(paymentText, margin + 10, yPosition, {
+            size: 9,
+            color: rgb(0.3, 0.3, 0.3),
+          });
+          yPosition -= lineHeight * 0.8;
+        } catch (e) {
+          // Skip invalid payment entries
+          console.error('Error rendering payment:', e);
+        }
       }
       yPosition -= lineHeight * 0.5;
     }
@@ -434,10 +483,13 @@ export async function GET(
     const pdfBytes = await pdfDoc.save();
 
     // Create safe filename
-    const safeCustomerName = bill.customer.name
+    const customerName = bill.customer.name || 'Customer';
+    const safeCustomerName = customerName
       .replace(/[^a-zA-Z0-9]/g, '_')
+      .replace(/_+/g, '_') // Replace multiple underscores with single
       .substring(0, 30);
-    const filename = `bill_${bill.billNumber}_${safeCustomerName}.pdf`;
+    const safeBillNumber = (bill.billNumber || 'UNKNOWN').replace(/[^a-zA-Z0-9]/g, '_');
+    const filename = `bill_${safeBillNumber}_${safeCustomerName}.pdf`;
 
     // Return PDF as downloadable file
     return new NextResponse(pdfBytes, {
