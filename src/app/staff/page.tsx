@@ -94,6 +94,14 @@ export default function StaffPage() {
     }
   };
 
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'METER_READER': return 'Meter Reader';
@@ -294,7 +302,7 @@ export default function StaffPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(member.createdAt).toLocaleDateString()}
+                        {formatDate(member.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
@@ -380,7 +388,7 @@ export default function StaffPage() {
 
                 <div className="border-t pt-4">
                   <label className="text-sm font-medium text-gray-600">Joined Date</label>
-                  <p className="text-gray-900">{new Date(selectedStaff.createdAt).toLocaleDateString()}</p>
+                  <p className="text-gray-900">{formatDate(selectedStaff.createdAt)}</p>
                 </div>
               </div>
 

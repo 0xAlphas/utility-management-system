@@ -96,6 +96,14 @@ export default function MetersPage() {
     }
   };
 
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'ELECTRIC': return 'bg-blue-100 text-blue-800';
@@ -295,10 +303,10 @@ export default function MetersPage() {
                         <div className="text-sm text-gray-900">{meter.location}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(meter.installationDate).toLocaleDateString()}
+                        {formatDate(meter.installationDate)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {meter.lastReadingDate ? new Date(meter.lastReadingDate).toLocaleDateString() : 'No readings'}
+                        {meter.lastReadingDate ? formatDate(meter.lastReadingDate) : 'No readings'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
@@ -356,7 +364,7 @@ export default function MetersPage() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Installation Date</label>
-                    <p className="text-gray-900">{new Date(selectedMeter.installationDate).toLocaleDateString()}</p>
+                    <p className="text-gray-900">{formatDate(selectedMeter.installationDate)}</p>
                   </div>
                 </div>
 
@@ -389,7 +397,7 @@ export default function MetersPage() {
                       <label className="text-sm font-medium text-gray-600">Last Reading Date</label>
                       <p className="text-gray-900">
                         {selectedMeter.lastReadingDate
-                          ? new Date(selectedMeter.lastReadingDate).toLocaleDateString()
+                          ? formatDate(selectedMeter.lastReadingDate)
                           : 'No readings yet'}
                       </p>
                     </div>
