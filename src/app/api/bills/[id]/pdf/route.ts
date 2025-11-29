@@ -597,7 +597,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `attachment; filename=${filename}`,
         'Content-Length': pdfBytes.length.toString(),
       },
     });
