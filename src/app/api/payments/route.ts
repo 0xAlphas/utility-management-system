@@ -2,6 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 
+/**
+ * Generate payment reference number in format: PAY-XXX-YYYY
+ * XXX = sequential number (padded to 3 digits)
+ * YYYY = current year
+ */
+async function generatePaymentReference(): Promise<string> {
+  const currentYear = new Date().getFullYear();
+
+  // Get count of payments created this year
+  const yearStart = new Date(currentYear, 0, 1);
+  const paymentCount = await prisma.payment.count({
+    where: {
+      createdAt: {
+        gte: yearStart,
+      },
+    },
+  });
+
+  // Generate reference number (next sequential number)
+  const sequenceNumber = (paymentCount + 1).toString().padStart(3, '0');
+
+  return `PAY-${sequenceNumber}-${currentYear}`;
+}
+
 // GET all payments
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth(request);
@@ -144,6 +168,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate payment reference number if not provided
+    const paymentRef = referenceNumber || await generatePaymentReference();
+
     // Create payment and update bill in a transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create payment
@@ -153,7 +180,7 @@ export async function POST(request: NextRequest) {
           amount: paymentAmount,
           paymentMethod,
           paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
-          referenceNumber,
+          referenceNumber: paymentRef,
           remarks,
           recordedBy: authResult.user.username,
         },

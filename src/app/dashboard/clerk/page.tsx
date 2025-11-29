@@ -926,9 +926,10 @@ export default function ClerkDashboard() {
                   value={paymentFormData.referenceNumber}
                   onChange={(e) => setPaymentFormData({ ...paymentFormData, referenceNumber: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="Transaction/cheque number"
+                  placeholder="Auto-generated if left empty"
                   disabled={submitting}
                 />
+                <p className="mt-1 text-xs text-gray-500">Leave empty to auto-generate (e.g., PAY-001-2024)</p>
               </div>
 
               <div className="mb-6">
