@@ -245,11 +245,15 @@ export default function Sidebar({ userRole, isOpen = true, onClose }: SidebarPro
 
       {/* Sidebar Footer */}
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200">
+        <Link
+          href="/contact"
+          onClick={onClose}
+          className="flex items-center px-4 py-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200 hover:shadow-md hover:from-blue-100 hover:to-blue-200 transition-all duration-200 cursor-pointer"
+        >
           <div className="flex-shrink-0">
-            <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <svg
-                className="h-5 w-5 text-blue-600"
+                className="h-5 w-5 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -258,16 +262,16 @@ export default function Sidebar({ userRole, isOpen = true, onClose }: SidebarPro
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
                 />
               </svg>
             </div>
           </div>
           <div className="ml-3">
-            <p className="text-xs font-medium text-gray-900">Need Help?</p>
-            <p className="text-xs text-gray-600">Contact Support</p>
+            <p className="text-xs font-semibold text-blue-900">Need Help?</p>
+            <p className="text-xs text-blue-700">Contact Support</p>
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   );
