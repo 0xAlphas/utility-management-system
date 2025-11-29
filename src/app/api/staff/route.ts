@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth, hashPassword } from '@/lib/auth';
-import { StaffRole } from '@/generated/prisma';
+
 
 // GET all staff (Admin and Manager only)
 export async function GET(request: NextRequest) {
-  const authResult = await requireAuth(request, [StaffRole.ADMIN, StaffRole.MANAGER]);
+  const authResult = await requireAuth(request, ['ADMIN', 'MANAGER']);
   if (authResult instanceof Response) return authResult;
 
   try {
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const isActive = searchParams.get('isActive');
 
     const where: any = {};
-    if (role) where.role = role as StaffRole;
+    if (role) where.role = role;
     if (isActive !== null) where.isActive = isActive === 'true';
 
     const staff = await prisma.staff.findMany({
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 
 // POST create new staff (Admin only)
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth(request, [StaffRole.ADMIN]);
+  const authResult = await requireAuth(request, ['ADMIN']);
   if (authResult instanceof Response) return authResult;
 
   try {

@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
-import { StaffRole, BillStatus } from '@/generated/prisma';
 import {
   calculateBillAmount,
   generateBillNumber,
-  getLatestReading,
   calculateConsumption,
 } from '@/lib/billing';
 
@@ -26,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     const where: any = {};
     if (customerId) where.customerId = customerId;
-    if (status) where.status = status as BillStatus;
+    if (status) where.status = status;
     if (month) where.billingMonth = parseInt(month);
     if (year) where.billingYear = parseInt(year);
 
@@ -73,7 +71,7 @@ export async function GET(request: NextRequest) {
 
 // POST create/generate new bill
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth(request, [StaffRole.ADMIN, StaffRole.CLERK]);
+  const authResult = await requireAuth(request, ['ADMIN', 'CLERK']);
   if (authResult instanceof Response) return authResult;
 
   try {
@@ -210,7 +208,7 @@ export async function POST(request: NextRequest) {
         totalAmount,
         paidAmount: 0,
         outstandingAmount: totalAmount,
-        status: BillStatus.UNPAID,
+        status: 'UNPAID',
         remarks: JSON.stringify(billDetails),
       },
       include: {

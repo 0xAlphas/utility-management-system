@@ -1,7 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
-import { StaffRole, PaymentMethod, BillStatus } from '@/generated/prisma';
+
+/**
+ * Generate payment reference number in format: PAY-XXX-YYYY
+ * XXX = sequential number (padded to 3 digits)
+ * YYYY = current year
+ */
+async function generatePaymentReference(): Promise<string> {
+  const currentYear = new Date().getFullYear();
+
+  // Get count of payments created this year
+  const yearStart = new Date(currentYear, 0, 1);
+  const paymentCount = await prisma.payment.count({
+    where: {
+      createdAt: {
+        gte: yearStart,
+      },
+    },
+  });
+
+  // Generate reference number (next sequential number)
+  const sequenceNumber = (paymentCount + 1).toString().padStart(3, '0');
+
+  return `PAY-${sequenceNumber}-${currentYear}`;
+}
 
 // GET all payments
 export async function GET(request: NextRequest) {
@@ -21,7 +44,7 @@ export async function GET(request: NextRequest) {
 
     const where: any = {};
     if (billId) where.billId = billId;
-    if (paymentMethod) where.paymentMethod = paymentMethod as PaymentMethod;
+    if (paymentMethod) where.paymentMethod = paymentMethod;
     if (startDate) where.paymentDate = { gte: new Date(startDate) };
     if (endDate) {
       where.paymentDate = {
@@ -82,7 +105,7 @@ export async function GET(request: NextRequest) {
 
 // POST create new payment
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth(request, [StaffRole.ADMIN, StaffRole.CLERK]);
+  const authResult = await requireAuth(request, ['ADMIN', 'CLERK']);
   if (authResult instanceof Response) return authResult;
 
   try {
@@ -97,7 +120,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate payment method
-    if (!Object.values(PaymentMethod).includes(paymentMethod)) {
+    const validPaymentMethods = ['CASH', 'CARD', 'BANK_TRANSFER', 'ONLINE', 'CHEQUE', 'MOBILE_PAYMENT'];
+    if (!validPaymentMethods.includes(paymentMethod)) {
       return NextResponse.json(
         { error: 'Invalid payment method' },
         { status: 400 }
@@ -119,7 +143,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (bill.status === BillStatus.CANCELLED) {
+    if (bill.status === 'CANCELLED') {
       return NextResponse.json(
         { error: 'Cannot add payment to cancelled bill' },
         { status: 400 }
@@ -144,6 +168,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate payment reference number if not provided
+    const paymentRef = referenceNumber || await generatePaymentReference();
+
     // Create payment and update bill in a transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create payment
@@ -153,7 +180,7 @@ export async function POST(request: NextRequest) {
           amount: paymentAmount,
           paymentMethod,
           paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
-          referenceNumber,
+          referenceNumber: paymentRef,
           remarks,
           recordedBy: authResult.user.username,
         },
@@ -164,9 +191,9 @@ export async function POST(request: NextRequest) {
       const newOutstandingAmount = bill.totalAmount - newPaidAmount;
       const newStatus =
         newOutstandingAmount === 0
-          ? BillStatus.PAID
+          ? 'PAID'
           : newOutstandingAmount < bill.totalAmount
-          ? BillStatus.PARTIALLY_PAID
+          ? 'PARTIALLY_PAID'
           : bill.status;
 
       const updatedBill = await tx.bill.update({

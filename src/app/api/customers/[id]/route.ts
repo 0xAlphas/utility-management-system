@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
-import { StaffRole } from '@/generated/prisma';
+
 
 // GET single customer
 export async function GET(
@@ -60,7 +60,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authResult = await requireAuth(request, [StaffRole.ADMIN, StaffRole.CLERK]);
+  const authResult = await requireAuth(request, ['ADMIN', 'CLERK']);
   if (authResult instanceof Response) return authResult;
 
   try {
@@ -116,7 +116,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authResult = await requireAuth(request, [StaffRole.ADMIN]);
+  const authResult = await requireAuth(request, ['ADMIN']);
   if (authResult instanceof Response) return authResult;
 
   try {

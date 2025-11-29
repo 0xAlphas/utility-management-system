@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
-import { StaffRole, BillStatus } from '@/generated/prisma';
 
 // GET single bill
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
 
   try {
+    const { id } = await params;
     const bill = await prisma.bill.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         customer: {
           select: {
@@ -66,18 +66,19 @@ export async function GET(
 // PATCH update bill
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth(request, [StaffRole.ADMIN, StaffRole.CLERK]);
+  const authResult = await requireAuth(request, ['ADMIN', 'CLERK']);
   if (authResult instanceof Response) return authResult;
 
   try {
+    const { id } = await params;
     const body = await request.json();
     const { dueDate, status, remarks } = body;
 
     // Check if bill exists
     const existing = await prisma.bill.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existing) {
@@ -89,11 +90,11 @@ export async function PATCH(
 
     const updateData: any = {};
     if (dueDate) updateData.dueDate = new Date(dueDate);
-    if (status) updateData.status = status as BillStatus;
+    if (status) updateData.status = status;
     if (remarks !== undefined) updateData.remarks = remarks;
 
     const bill = await prisma.bill.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         customer: {
@@ -120,15 +121,16 @@ export async function PATCH(
 // DELETE bill
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth(request, [StaffRole.ADMIN]);
+  const authResult = await requireAuth(request, ['ADMIN']);
   if (authResult instanceof Response) return authResult;
 
   try {
+    const { id } = await params;
     // Check if bill has payments
     const bill = await prisma.bill.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         payments: true,
       },
@@ -149,7 +151,7 @@ export async function DELETE(
     }
 
     await prisma.bill.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({
