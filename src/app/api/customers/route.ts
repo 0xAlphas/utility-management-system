@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
-import { StaffRole, CustomerType } from '@/generated/prisma';
 
 // GET all customers
 export async function GET(request: NextRequest) {
@@ -18,8 +17,10 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (type) where.type = type as CustomerType;
-    if (isActive !== null) where.isActive = isActive === 'true';
+    if (type) where.type = type;
+    if (isActive !== null && isActive !== undefined && isActive !== '') {
+      where.isActive = isActive === 'true';
+    }
     if (search) {
       where.OR = [
         { name: { contains: search } },
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
 
 // POST create new customer
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth(request, [StaffRole.ADMIN, StaffRole.CLERK]);
+  const authResult = await requireAuth(request, ['ADMIN', 'CLERK']);
   if (authResult instanceof Response) return authResult;
 
   try {
@@ -87,7 +88,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate customer type
-    if (!Object.values(CustomerType).includes(type)) {
+    const validTypes = ['HOUSEHOLD', 'BUSINESS', 'GOVERNMENT'];
+    if (!validTypes.includes(type)) {
       return NextResponse.json(
         { error: 'Invalid customer type' },
         { status: 400 }

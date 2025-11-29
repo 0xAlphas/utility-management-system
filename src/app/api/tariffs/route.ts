@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
-import { StaffRole } from '@/generated/prisma';
 
 // GET all tariffs
 export async function GET(request: NextRequest) {
@@ -15,15 +14,19 @@ export async function GET(request: NextRequest) {
 
     const where: any = {};
     if (utilityTypeId) where.utilityTypeId = utilityTypeId;
-    if (isActive !== null) where.isActive = isActive === 'true';
+    if (isActive !== null && isActive !== undefined && isActive !== '') {
+      where.isActive = isActive === 'true';
+    }
 
-    // Get active tariffs (not expired)
-    const now = new Date();
-    where.effectiveFrom = { lte: now };
-    where.OR = [
-      { effectiveTo: null },
-      { effectiveTo: { gte: now } },
-    ];
+    // Get active tariffs (not expired) - only if not filtering by specific criteria
+    if (!utilityTypeId && !isActive) {
+      const now = new Date();
+      where.effectiveFrom = { lte: now };
+      where.OR = [
+        { effectiveTo: null },
+        { effectiveTo: { gte: now } },
+      ];
+    }
 
     const tariffs = await prisma.tariff.findMany({
       where,
@@ -51,7 +54,7 @@ export async function GET(request: NextRequest) {
 
 // POST create new tariff
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth(request, [StaffRole.ADMIN]);
+  const authResult = await requireAuth(request, ['ADMIN']);
   if (authResult instanceof Response) return authResult;
 
   try {

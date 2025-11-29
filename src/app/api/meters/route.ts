@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
-import { StaffRole, MeterStatus } from '@/generated/prisma';
 
 // GET all meters
 export async function GET(request: NextRequest) {
@@ -21,7 +20,7 @@ export async function GET(request: NextRequest) {
     const where: any = {};
     if (customerId) where.customerId = customerId;
     if (utilityTypeId) where.utilityTypeId = utilityTypeId;
-    if (status) where.status = status as MeterStatus;
+    if (status) where.status = status;
     if (meterNumber) where.meterNumber = { contains: meterNumber };
 
     const [meters, total] = await Promise.all([
@@ -70,7 +69,7 @@ export async function GET(request: NextRequest) {
 
 // POST create new meter
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth(request, [StaffRole.ADMIN, StaffRole.CLERK]);
+  const authResult = await requireAuth(request, ['ADMIN', 'CLERK']);
   if (authResult instanceof Response) return authResult;
 
   try {
@@ -139,7 +138,7 @@ export async function POST(request: NextRequest) {
         customerId,
         utilityTypeId,
         installationDate: installationDate ? new Date(installationDate) : new Date(),
-        status: status || MeterStatus.ACTIVE,
+        status: status || 'ACTIVE',
       },
       include: {
         customer: {
