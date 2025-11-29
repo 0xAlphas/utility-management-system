@@ -102,6 +102,14 @@ export default function TariffsPage() {
     }
   };
 
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   return (
     <DashboardLayout allowedRoles={['ADMIN']}>
       <div className="space-y-6">
@@ -305,7 +313,7 @@ export default function TariffsPage() {
                         <div className="text-sm font-semibold text-blue-600">${tariff.unitRate.toFixed(4)}/unit</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(tariff.effectiveFrom).toLocaleDateString()}
+                        {formatDate(tariff.effectiveFrom)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -390,13 +398,13 @@ export default function TariffsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-600">Effective From</label>
-                      <p className="text-gray-900">{new Date(selectedTariff.effectiveFrom).toLocaleDateString()}</p>
+                      <p className="text-gray-900">{formatDate(selectedTariff.effectiveFrom)}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-600">Effective To</label>
                       <p className="text-gray-900">
                         {selectedTariff.effectiveTo
-                          ? new Date(selectedTariff.effectiveTo).toLocaleDateString()
+                          ? formatDate(selectedTariff.effectiveTo)
                           : 'No end date'}
                       </p>
                     </div>
