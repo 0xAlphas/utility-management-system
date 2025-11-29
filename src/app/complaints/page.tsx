@@ -3,20 +3,23 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { showToast } from '@/lib/toast';
+import Link from 'next/link';
 
 interface Complaint {
   id: string;
-  complaintNumber: string;
-  customerId: string;
-  customerName: string;
-  customerContact: string;
   subject: string;
   description: string;
   priority: string;
   status: string;
-  category: string;
+  resolution: string | null;
   createdAt: string;
   resolvedAt: string | null;
+  customer: {
+    id: string;
+    name: string;
+    contact: string;
+    email: string;
+  };
 }
 
 export default function ComplaintsPage() {
@@ -25,7 +28,6 @@ export default function ComplaintsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [priorityFilter, setPriorityFilter] = useState('ALL');
-  const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
@@ -37,7 +39,7 @@ export default function ComplaintsPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/complaints', {
+      const response = await fetch('/api/complaints?limit=100', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -59,26 +61,22 @@ export default function ComplaintsPage() {
 
   const filteredComplaints = complaints.filter(complaint => {
     const matchesSearch =
-      complaint.complaintNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      complaint.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       complaint.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      complaint.description.toLowerCase().includes(searchQuery.toLowerCase());
+      complaint.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      complaint.customer.name.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus = statusFilter === 'ALL' || complaint.status === statusFilter;
     const matchesPriority = priorityFilter === 'ALL' || complaint.priority === priorityFilter;
-    const matchesCategory = categoryFilter === 'ALL' || complaint.category === categoryFilter;
 
-    return matchesSearch && matchesStatus && matchesPriority && matchesCategory;
+    return matchesSearch && matchesStatus && matchesPriority;
   });
 
   const stats = {
     total: complaints.length,
-    pending: complaints.filter(c => c.status === 'PENDING').length,
+    open: complaints.filter(c => c.status === 'OPEN').length,
     inProgress: complaints.filter(c => c.status === 'IN_PROGRESS').length,
     resolved: complaints.filter(c => c.status === 'RESOLVED').length,
-    high: complaints.filter(c => c.priority === 'HIGH').length,
-    medium: complaints.filter(c => c.priority === 'MEDIUM').length,
-    low: complaints.filter(c => c.priority === 'LOW').length,
+    high: complaints.filter(c => c.priority === 'HIGH' || c.priority === 'URGENT').length,
   };
 
   const viewComplaintDetails = (complaint: Complaint) => {
@@ -88,7 +86,8 @@ export default function ComplaintsPage() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'HIGH': return 'bg-red-100 text-red-800 ring-1 ring-red-600';
+      case 'URGENT': return 'bg-red-100 text-red-800 ring-1 ring-red-600';
+      case 'HIGH': return 'bg-orange-100 text-orange-800 ring-1 ring-orange-600';
       case 'MEDIUM': return 'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-600';
       case 'LOW': return 'bg-green-100 text-green-800 ring-1 ring-green-600';
       default: return 'bg-gray-100 text-gray-800 ring-1 ring-gray-600';
@@ -97,19 +96,35 @@ export default function ComplaintsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-600';
+      case 'OPEN': return 'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-600';
       case 'IN_PROGRESS': return 'bg-blue-100 text-blue-800 ring-1 ring-blue-600';
       case 'RESOLVED': return 'bg-green-100 text-green-800 ring-1 ring-green-600';
       case 'CLOSED': return 'bg-gray-100 text-gray-800 ring-1 ring-gray-600';
+      case 'REJECTED': return 'bg-red-100 text-red-800 ring-1 ring-red-600';
       default: return 'bg-gray-100 text-gray-800 ring-1 ring-gray-600';
     }
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'IN_PROGRESS': return 'In Progress';
-      default: return status;
-    }
+    return status.replace('_', ' ');
+  };
+
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const formatDateTime = (dateString: string): string => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   return (
@@ -142,8 +157,8 @@ export default function ComplaintsPage() {
           <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-3xl font-bold text-yellow-600 mt-2">{stats.pending}</p>
+                <p className="text-sm font-medium text-gray-600">Open</p>
+                <p className="text-3xl font-bold text-yellow-600 mt-2">{stats.open}</p>
               </div>
               <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-3 shadow-sm">
                 <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,7 +199,7 @@ export default function ComplaintsPage() {
 
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Search
@@ -208,10 +223,11 @@ export default function ComplaintsPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="ALL">All Status</option>
-                <option value="PENDING">Pending</option>
+                <option value="OPEN">Open</option>
                 <option value="IN_PROGRESS">In Progress</option>
                 <option value="RESOLVED">Resolved</option>
                 <option value="CLOSED">Closed</option>
+                <option value="REJECTED">Rejected</option>
               </select>
             </div>
 
@@ -225,27 +241,10 @@ export default function ComplaintsPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="ALL">All Priority</option>
+                <option value="URGENT">Urgent</option>
                 <option value="HIGH">High</option>
                 <option value="MEDIUM">Medium</option>
                 <option value="LOW">Low</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
-              </label>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="ALL">All Categories</option>
-                <option value="BILLING">Billing</option>
-                <option value="METER">Meter</option>
-                <option value="SERVICE">Service</option>
-                <option value="PAYMENT">Payment</option>
-                <option value="OTHER">Other</option>
               </select>
             </div>
           </div>
@@ -276,16 +275,10 @@ export default function ComplaintsPage() {
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Complaint #
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Customer
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Subject
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Category
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Priority
@@ -305,19 +298,11 @@ export default function ComplaintsPage() {
                   {filteredComplaints.map((complaint) => (
                     <tr key={complaint.id} className="hover:bg-gray-50 transition-colors duration-150">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{complaint.complaintNumber}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{complaint.customerName}</div>
-                        <div className="text-sm text-gray-500">{complaint.customerContact}</div>
+                        <div className="text-sm text-gray-900">{complaint.customer.name}</div>
+                        <div className="text-sm text-gray-500">{complaint.customer.contact}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900 max-w-xs truncate">{complaint.subject}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800 ring-1 ring-purple-600">
-                          {complaint.category}
-                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityColor(complaint.priority)}`}>
@@ -330,7 +315,7 @@ export default function ComplaintsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(complaint.createdAt).toLocaleDateString()}
+                        {formatDate(complaint.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
@@ -345,6 +330,29 @@ export default function ComplaintsPage() {
                 </tbody>
               </table>
             )}
+          </div>
+        </div>
+
+        {/* Need Help Section */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-md border border-blue-100 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-blue-600 rounded-full p-3">
+                <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Need Help?</h3>
+                <p className="text-sm text-gray-600">Our support team is here to assist you</p>
+              </div>
+            </div>
+            <Link
+              href="/contact"
+              className="px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors duration-150 shadow-sm hover:shadow-md"
+            >
+              Contact Support
+            </Link>
           </div>
         </div>
 
@@ -367,24 +375,12 @@ export default function ComplaintsPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Complaint Number</label>
-                    <p className="text-gray-900 font-semibold">{selectedComplaint.complaintNumber}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Category</label>
-                    <p>
-                      <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800 ring-1 ring-purple-600">
-                        {selectedComplaint.category}
-                      </span>
-                    </p>
-                  </div>
-                  <div>
                     <label className="text-sm font-medium text-gray-600">Customer Name</label>
-                    <p className="text-gray-900">{selectedComplaint.customerName}</p>
+                    <p className="text-gray-900 font-semibold">{selectedComplaint.customer.name}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Contact</label>
-                    <p className="text-gray-900">{selectedComplaint.customerContact}</p>
+                    <p className="text-gray-900">{selectedComplaint.customer.contact}</p>
                   </div>
                 </div>
 
@@ -395,7 +391,7 @@ export default function ComplaintsPage() {
 
                 <div>
                   <label className="text-sm font-medium text-gray-600">Description</label>
-                  <p className="text-gray-900 mt-1 whitespace-pre-wrap">{selectedComplaint.description}</p>
+                  <p className="text-gray-900 mt-1 whitespace-pre-wrap bg-gray-50 p-3 rounded-md">{selectedComplaint.description}</p>
                 </div>
 
                 <div className="border-t pt-4">
@@ -423,16 +419,23 @@ export default function ComplaintsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-600">Created Date</label>
-                      <p className="text-gray-900">{new Date(selectedComplaint.createdAt).toLocaleString()}</p>
+                      <p className="text-gray-900">{formatDateTime(selectedComplaint.createdAt)}</p>
                     </div>
                     {selectedComplaint.resolvedAt && (
                       <div>
                         <label className="text-sm font-medium text-gray-600">Resolved Date</label>
-                        <p className="text-gray-900">{new Date(selectedComplaint.resolvedAt).toLocaleString()}</p>
+                        <p className="text-gray-900">{formatDateTime(selectedComplaint.resolvedAt)}</p>
                       </div>
                     )}
                   </div>
                 </div>
+
+                {selectedComplaint.resolution && (
+                  <div className="border-t pt-4">
+                    <label className="text-sm font-medium text-gray-600">Resolution</label>
+                    <p className="text-gray-900 mt-1 whitespace-pre-wrap bg-green-50 p-3 rounded-md">{selectedComplaint.resolution}</p>
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 flex justify-end">
