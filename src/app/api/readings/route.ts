@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
-import { StaffRole } from '@/generated/prisma';
+
 
 // GET all meter readings
 export async function GET(request: NextRequest) {
@@ -87,9 +87,9 @@ export async function GET(request: NextRequest) {
 // POST create new meter reading
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth(request, [
-    StaffRole.ADMIN,
-    StaffRole.METER_READER,
-    StaffRole.CLERK,
+    'ADMIN',
+    'METER_READER',
+    'CLERK',
   ]);
   if (authResult instanceof Response) return authResult;
 

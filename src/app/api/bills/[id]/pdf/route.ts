@@ -6,15 +6,18 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 // GET PDF for a bill
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
 
   try {
+    // Await params in Next.js 15+
+    const { id } = await params;
+
     // Fetch bill with customer and payment details
     const bill = await prisma.bill.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         customer: {
           select: {
@@ -438,13 +441,15 @@ export async function GET(
       ? bill.outstandingAmount.toFixed(2)
       : '0.00';
 
+    const summaryRightX = width - margin - 100;
+
     drawText('Total Consumption:', margin, yPosition, {
       font: boldFont,
       size: 11,
     });
     drawText(
       sanitizeText(totalConsumption + ' units'),
-      colX.amount,
+      summaryRightX,
       yPosition,
       { font: boldFont, size: 11 }
     );
@@ -456,7 +461,7 @@ export async function GET(
     });
     drawText(
       sanitizeText('Rs. ' + totalAmount),
-      colX.amount,
+      summaryRightX,
       yPosition,
       { font: boldFont, size: 12 }
     );
@@ -470,7 +475,7 @@ export async function GET(
       });
       drawText(
         sanitizeText('Rs. ' + paidAmount),
-        colX.amount,
+        summaryRightX,
         yPosition,
         { font: boldFont, size: 11, color: rgb(0, 0.6, 0) }
       );
@@ -485,7 +490,7 @@ export async function GET(
       });
       drawText(
         sanitizeText('Rs. ' + outstandingAmount),
-        colX.amount,
+        summaryRightX,
         yPosition,
         { font: boldFont, size: 11, color: rgb(0.8, 0, 0) }
       );
@@ -543,7 +548,7 @@ export async function GET(
           const paymentAmount = typeof payment.amount === 'number'
             ? payment.amount.toFixed(2)
             : '0.00';
-          const paymentMethod = sanitizeText(payment.method || 'N/A');
+          const paymentMethod = sanitizeText(payment.paymentMethod || 'N/A');
 
           const paymentText = paymentDate + ' - Rs. ' + paymentAmount + ' (' + paymentMethod + ')';
           drawText(sanitizeText(paymentText), margin + 10, yPosition, {
@@ -588,11 +593,11 @@ export async function GET(
     const filename = `bill_${safeBillNumber}_${safeCustomerName}.pdf`;
 
     // Return PDF as downloadable file
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `attachment; filename=${filename}`,
         'Content-Length': pdfBytes.length.toString(),
       },
     });

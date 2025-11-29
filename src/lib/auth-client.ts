@@ -89,10 +89,44 @@ export function getDefaultRouteForRole(role: string): string {
  */
 export function hasRouteAccess(userRole: string, routePath: string): boolean {
   const roleAccessMap: Record<string, string[]> = {
-    ADMIN: ['/dashboard/admin', '/dashboard/clerk', '/dashboard/reader', '/dashboard/manager'],
-    CLERK: ['/dashboard/clerk'],
-    METER_READER: ['/dashboard/reader'],
-    MANAGER: ['/dashboard/manager'],
+    ADMIN: [
+      '/dashboard/admin',
+      '/dashboard/clerk',
+      '/dashboard/reader',
+      '/dashboard/manager',
+      '/customers',
+      '/meters',
+      '/readings',
+      '/tariffs',
+      '/bills',
+      '/payments',
+      '/reports',
+      '/staff',
+      '/complaints',
+      '/contact',
+    ],
+    CLERK: [
+      '/dashboard/clerk',
+      '/customers',
+      '/readings',
+      '/bills',
+      '/payments',
+      '/complaints',
+      '/contact',
+    ],
+    METER_READER: [
+      '/dashboard/reader',
+      '/meters',
+      '/readings',
+      '/contact',
+    ],
+    MANAGER: [
+      '/dashboard/manager',
+      '/bills',
+      '/payments',
+      '/reports',
+      '/contact',
+    ],
   };
 
   const allowedRoutes = roleAccessMap[userRole] || [];
