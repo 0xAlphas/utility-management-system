@@ -7,14 +7,18 @@ import { showToast } from '@/lib/toast';
 interface Tariff {
   id: string;
   name: string;
-  utilityType: string;
-  customerType: string;
-  baseCharge: number;
-  unitRate: number;
+  rate: number;
+  fixedCharge: number;
+  minUsage: number;
+  maxUsage: number | null;
   effectiveFrom: string;
   effectiveTo: string | null;
-  description: string | null;
   isActive: boolean;
+  utilityType: {
+    id: string;
+    name: string;
+    unit: string;
+  };
 }
 
 export default function TariffsPage() {
@@ -22,7 +26,6 @@ export default function TariffsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [utilityTypeFilter, setUtilityTypeFilter] = useState('ALL');
-  const [customerTypeFilter, setCustomerTypeFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedTariff, setSelectedTariff] = useState<Tariff | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -57,26 +60,23 @@ export default function TariffsPage() {
 
   const filteredTariffs = tariffs.filter(tariff => {
     const matchesSearch =
-      tariff.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (tariff.description && tariff.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      tariff.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesUtilityType = utilityTypeFilter === 'ALL' || tariff.utilityType === utilityTypeFilter;
-    const matchesCustomerType = customerTypeFilter === 'ALL' || tariff.customerType === customerTypeFilter;
+    const matchesUtilityType = utilityTypeFilter === 'ALL' || tariff.utilityType.name === utilityTypeFilter;
     const matchesStatus =
       statusFilter === 'ALL' ||
       (statusFilter === 'ACTIVE' && tariff.isActive) ||
       (statusFilter === 'INACTIVE' && !tariff.isActive);
 
-    return matchesSearch && matchesUtilityType && matchesCustomerType && matchesStatus;
+    return matchesSearch && matchesUtilityType && matchesStatus;
   });
 
   const stats = {
     total: tariffs.length,
     active: tariffs.filter(t => t.isActive).length,
     inactive: tariffs.filter(t => !t.isActive).length,
-    electric: tariffs.filter(t => t.utilityType === 'ELECTRIC').length,
-    water: tariffs.filter(t => t.utilityType === 'WATER').length,
-    gas: tariffs.filter(t => t.utilityType === 'GAS').length,
+    electricity: tariffs.filter(t => t.utilityType.name.toLowerCase() === 'electricity').length,
+    water: tariffs.filter(t => t.utilityType.name.toLowerCase() === 'water').length,
   };
 
   const viewTariffDetails = (tariff: Tariff) => {
@@ -85,21 +85,11 @@ export default function TariffsPage() {
   };
 
   const getUtilityTypeColor = (type: string) => {
-    switch (type) {
-      case 'ELECTRIC': return 'bg-blue-100 text-blue-800';
-      case 'WATER': return 'bg-cyan-100 text-cyan-800';
-      case 'GAS': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getCustomerTypeColor = (type: string) => {
-    switch (type) {
-      case 'RESIDENTIAL': return 'bg-green-100 text-green-800';
-      case 'COMMERCIAL': return 'bg-purple-100 text-purple-800';
-      case 'INDUSTRIAL': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    const lowerType = type.toLowerCase();
+    if (lowerType === 'electricity' || lowerType === 'electric') return 'bg-blue-100 text-blue-800';
+    if (lowerType === 'water') return 'bg-cyan-100 text-cyan-800';
+    if (lowerType === 'gas') return 'bg-orange-100 text-orange-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
   const formatDate = (dateString: string): string => {
@@ -168,8 +158,8 @@ export default function TariffsPage() {
           <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Electric Tariffs</p>
-                <p className="text-3xl font-bold text-blue-600 mt-2">{stats.electric}</p>
+                <p className="text-sm font-medium text-gray-600">Electricity</p>
+                <p className="text-3xl font-bold text-blue-600 mt-2">{stats.electricity}</p>
               </div>
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 shadow-sm">
                 <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,7 +172,7 @@ export default function TariffsPage() {
 
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Search
@@ -206,25 +196,8 @@ export default function TariffsPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="ALL">All Types</option>
-                <option value="ELECTRIC">Electric</option>
-                <option value="WATER">Water</option>
-                <option value="GAS">Gas</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Customer Type
-              </label>
-              <select
-                value={customerTypeFilter}
-                onChange={(e) => setCustomerTypeFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="ALL">All Types</option>
-                <option value="RESIDENTIAL">Residential</option>
-                <option value="COMMERCIAL">Commercial</option>
-                <option value="INDUSTRIAL">Industrial</option>
+                <option value="Electricity">Electricity</option>
+                <option value="Water">Water</option>
               </select>
             </div>
 
@@ -247,6 +220,11 @@ export default function TariffsPage() {
 
         {/* Tariffs Table */}
         <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <h2 className="text-lg font-semibold text-gray-900">All Tariffs</h2>
+            <p className="text-sm text-gray-600 mt-1">Showing {filteredTariffs.length} of {tariffs.length} tariffs</p>
+          </div>
+
           <div className="overflow-x-auto">
             {loading ? (
               <div className="flex justify-center items-center py-12">
@@ -271,13 +249,13 @@ export default function TariffsPage() {
                       Utility Type
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Customer Type
+                      Usage Range
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Base Charge
+                      Fixed Charge
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Unit Rate
+                      Rate/Unit
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Effective From
@@ -297,20 +275,20 @@ export default function TariffsPage() {
                         <div className="text-sm font-medium text-gray-900">{tariff.name}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getUtilityTypeColor(tariff.utilityType)}`}>
-                          {tariff.utilityType}
+                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getUtilityTypeColor(tariff.utilityType.name)}`}>
+                          {tariff.utilityType.name}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getCustomerTypeColor(tariff.customerType)}`}>
-                          {tariff.customerType}
-                        </span>
+                        <div className="text-sm text-gray-900">
+                          {tariff.minUsage} - {tariff.maxUsage ? tariff.maxUsage : '∞'} {tariff.utilityType.unit}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-gray-900">${tariff.baseCharge.toFixed(2)}</div>
+                        <div className="text-sm font-semibold text-gray-900">${tariff.fixedCharge.toFixed(2)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-blue-600">${tariff.unitRate.toFixed(4)}/unit</div>
+                        <div className="text-sm font-semibold text-blue-600">${tariff.rate.toFixed(4)}/{tariff.utilityType.unit}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(tariff.effectiveFrom)}
@@ -360,35 +338,32 @@ export default function TariffsPage() {
                   <p className="text-lg font-semibold text-gray-900">{selectedTariff.name}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Utility Type</label>
-                    <p>
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getUtilityTypeColor(selectedTariff.utilityType)}`}>
-                        {selectedTariff.utilityType}
-                      </span>
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Customer Type</label>
-                    <p>
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getCustomerTypeColor(selectedTariff.customerType)}`}>
-                        {selectedTariff.customerType}
-                      </span>
-                    </p>
-                  </div>
+                <div className="border-t pt-4">
+                  <label className="text-sm font-medium text-gray-600">Utility Type</label>
+                  <p>
+                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getUtilityTypeColor(selectedTariff.utilityType.name)}`}>
+                      {selectedTariff.utilityType.name}
+                    </span>
+                  </p>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">Usage Range</h4>
+                  <p className="text-gray-900">
+                    {selectedTariff.minUsage} - {selectedTariff.maxUsage ? selectedTariff.maxUsage : '∞'} {selectedTariff.utilityType.unit}
+                  </p>
                 </div>
 
                 <div className="border-t pt-4">
                   <h4 className="font-semibold text-gray-900 mb-3">Pricing Details</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Base Charge</label>
-                      <p className="text-xl font-bold text-gray-900">${selectedTariff.baseCharge.toFixed(2)}</p>
+                      <label className="text-sm font-medium text-gray-600">Fixed Charge</label>
+                      <p className="text-xl font-bold text-gray-900">${selectedTariff.fixedCharge.toFixed(2)}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Unit Rate</label>
-                      <p className="text-xl font-bold text-blue-600">${selectedTariff.unitRate.toFixed(4)}/unit</p>
+                      <label className="text-sm font-medium text-gray-600">Rate per {selectedTariff.utilityType.unit}</label>
+                      <p className="text-xl font-bold text-blue-600">${selectedTariff.rate.toFixed(4)}</p>
                     </div>
                   </div>
                 </div>
@@ -421,13 +396,6 @@ export default function TariffsPage() {
                     </span>
                   </p>
                 </div>
-
-                {selectedTariff.description && (
-                  <div className="border-t pt-4">
-                    <label className="text-sm font-medium text-gray-600">Description</label>
-                    <p className="text-gray-700 bg-gray-50 p-3 rounded-md mt-2">{selectedTariff.description}</p>
-                  </div>
-                )}
               </div>
 
               <div className="mt-6 flex justify-end">

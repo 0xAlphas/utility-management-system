@@ -8,24 +8,20 @@ interface Reading {
   id: string;
   readingValue: number;
   readingDate: string;
-  consumption: number;
-  notes: string | null;
-  status: string;
+  remarks: string | null;
+  recordedBy: string | null;
   meter: {
     id: string;
     meterNumber: string;
-    type: string;
     customer: {
       id: string;
-      accountNumber: string;
       name: string;
-      address: string;
     };
-  };
-  reader: {
-    id: string;
-    name: string;
-    username: string;
+    utilityType: {
+      id: string;
+      name: string;
+      unit: string;
+    };
   };
 }
 
@@ -33,7 +29,6 @@ export default function ReadingsPage() {
   const [readings, setReadings] = useState<Reading[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState('ALL');
   const [selectedReading, setSelectedReading] = useState<Reading | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -46,7 +41,7 @@ export default function ReadingsPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/readings', {
+      const response = await fetch('/api/readings?limit=100', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -96,22 +91,25 @@ export default function ReadingsPage() {
   const filteredReadings = getDateFilteredReadings().filter(reading => {
     const matchesSearch =
       reading.meter.meterNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reading.meter.customer.accountNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       reading.meter.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reading.reader.name.toLowerCase().includes(searchQuery.toLowerCase());
+      (reading.recordedBy && reading.recordedBy.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesStatus = statusFilter === 'ALL' || reading.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 
   const stats = {
     total: readings.length,
-    verified: readings.filter(r => r.status === 'VERIFIED').length,
-    pending: readings.filter(r => r.status === 'PENDING').length,
-    disputed: readings.filter(r => r.status === 'DISPUTED').length,
-    totalConsumption: readings.reduce((sum, r) => sum + r.consumption, 0),
-    avgConsumption: readings.length > 0 ? readings.reduce((sum, r) => sum + r.consumption, 0) / readings.length : 0,
+    thisMonth: readings.filter(r => {
+      const readingDate = new Date(r.readingDate);
+      const now = new Date();
+      return readingDate.getMonth() === now.getMonth() && readingDate.getFullYear() === now.getFullYear();
+    }).length,
+    today: readings.filter(r => {
+      const readingDate = new Date(r.readingDate);
+      const today = new Date();
+      return readingDate.toDateString() === today.toDateString();
+    }).length,
+    avgReading: readings.length > 0 ? readings.reduce((sum, r) => sum + r.readingValue, 0) / readings.length : 0,
   };
 
   const viewReadingDetails = (reading: Reading) => {
@@ -119,22 +117,30 @@ export default function ReadingsPage() {
     setShowDetailsModal(true);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'VERIFIED': return 'bg-green-100 text-green-800';
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'DISPUTED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const getUtilityTypeColor = (type: string) => {
+    const lowerType = type.toLowerCase();
+    if (lowerType === 'electricity' || lowerType === 'electric') return 'bg-blue-100 text-blue-800';
+    if (lowerType === 'water') return 'bg-cyan-100 text-cyan-800';
+    if (lowerType === 'gas') return 'bg-orange-100 text-orange-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
-  const getMeterTypeColor = (type: string) => {
-    switch (type) {
-      case 'ELECTRIC': return 'bg-blue-100 text-blue-800';
-      case 'WATER': return 'bg-cyan-100 text-cyan-800';
-      case 'GAS': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const formatDateTime = (dateString: string): string => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   return (
@@ -167,12 +173,12 @@ export default function ReadingsPage() {
           <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Verified</p>
-                <p className="text-3xl font-bold text-green-600 mt-2">{stats.verified}</p>
+                <p className="text-sm font-medium text-gray-600">This Month</p>
+                <p className="text-3xl font-bold text-green-600 mt-2">{stats.thisMonth}</p>
               </div>
               <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-3 shadow-sm">
                 <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
             </div>
@@ -181,8 +187,8 @@ export default function ReadingsPage() {
           <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-3xl font-bold text-yellow-600 mt-2">{stats.pending}</p>
+                <p className="text-sm font-medium text-gray-600">Today</p>
+                <p className="text-3xl font-bold text-yellow-600 mt-2">{stats.today}</p>
               </div>
               <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-3 shadow-sm">
                 <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -195,12 +201,12 @@ export default function ReadingsPage() {
           <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg Consumption</p>
-                <p className="text-3xl font-bold text-purple-600 mt-2">{stats.avgConsumption.toFixed(1)}</p>
+                <p className="text-sm font-medium text-gray-600">Avg Reading</p>
+                <p className="text-3xl font-bold text-purple-600 mt-2">{stats.avgReading.toFixed(1)}</p>
               </div>
               <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-3 shadow-sm">
                 <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
             </div>
@@ -209,7 +215,7 @@ export default function ReadingsPage() {
 
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Search
@@ -221,22 +227,6 @@ export default function ReadingsPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="ALL">All Status</option>
-                <option value="VERIFIED">Verified</option>
-                <option value="PENDING">Pending</option>
-                <option value="DISPUTED">Disputed</option>
-              </select>
             </div>
 
             <div>
@@ -260,6 +250,11 @@ export default function ReadingsPage() {
 
         {/* Readings Table */}
         <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <h2 className="text-lg font-semibold text-gray-900">All Readings</h2>
+            <p className="text-sm text-gray-600 mt-1">Showing {filteredReadings.length} of {readings.length} readings</p>
+          </div>
+
           <div className="overflow-x-auto">
             {loading ? (
               <div className="flex justify-center items-center py-12">
@@ -284,7 +279,7 @@ export default function ReadingsPage() {
                       Meter Number
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Type
+                      Utility Type
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Customer
@@ -293,13 +288,7 @@ export default function ReadingsPage() {
                       Reading Value
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Consumption
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Reader
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Status
+                      Recorded By
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Actions
@@ -310,33 +299,24 @@ export default function ReadingsPage() {
                   {filteredReadings.map((reading) => (
                     <tr key={reading.id} className="hover:bg-gray-50 transition-colors duration-150">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(reading.readingDate).toLocaleDateString()}
+                        {formatDate(reading.readingDate)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{reading.meter.meterNumber}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getMeterTypeColor(reading.meter.type)}`}>
-                          {reading.meter.type}
+                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getUtilityTypeColor(reading.meter.utilityType.name)}`}>
+                          {reading.meter.utilityType.name}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{reading.meter.customer.name}</div>
-                        <div className="text-sm text-gray-500">{reading.meter.customer.accountNumber}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-gray-900">{reading.readingValue.toFixed(2)}</div>
+                        <div className="text-sm font-semibold text-blue-600">{reading.readingValue.toFixed(2)} {reading.meter.utilityType.unit}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-blue-600">{reading.consumption.toFixed(2)}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{reading.reader.name}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(reading.status)}`}>
-                          {reading.status}
-                        </span>
+                        <div className="text-sm text-gray-900">{reading.recordedBy || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
@@ -374,23 +354,13 @@ export default function ReadingsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-gray-600">Reading Date</label>
-                    <p className="text-gray-900 font-semibold">{new Date(selectedReading.readingDate).toLocaleDateString()}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Status</label>
-                    <p>
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(selectedReading.status)}`}>
-                        {selectedReading.status}
-                      </span>
-                    </p>
+                    <p className="text-gray-900 font-semibold">{formatDateTime(selectedReading.readingDate)}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Reading Value</label>
-                    <p className="text-gray-900 font-semibold">{selectedReading.readingValue.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Consumption</label>
-                    <p className="text-blue-600 font-semibold">{selectedReading.consumption.toFixed(2)}</p>
+                    <p className="text-blue-600 font-semibold text-xl">
+                      {selectedReading.readingValue.toFixed(2)} {selectedReading.meter.utilityType.unit}
+                    </p>
                   </div>
                 </div>
 
@@ -402,10 +372,10 @@ export default function ReadingsPage() {
                       <p className="text-gray-900">{selectedReading.meter.meterNumber}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Meter Type</label>
+                      <label className="text-sm font-medium text-gray-600">Utility Type</label>
                       <p>
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getMeterTypeColor(selectedReading.meter.type)}`}>
-                          {selectedReading.meter.type}
+                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getUtilityTypeColor(selectedReading.meter.utilityType.name)}`}>
+                          {selectedReading.meter.utilityType.name}
                         </span>
                       </p>
                     </div>
@@ -414,40 +384,21 @@ export default function ReadingsPage() {
 
                 <div className="border-t pt-4">
                   <h4 className="font-semibold text-gray-900 mb-3">Customer Information</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Account Number</label>
-                      <p className="text-gray-900">{selectedReading.meter.customer.accountNumber}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Customer Name</label>
-                      <p className="text-gray-900">{selectedReading.meter.customer.name}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <label className="text-sm font-medium text-gray-600">Address</label>
-                      <p className="text-gray-900">{selectedReading.meter.customer.address}</p>
-                    </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Customer Name</label>
+                    <p className="text-gray-900">{selectedReading.meter.customer.name}</p>
                   </div>
                 </div>
 
                 <div className="border-t pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-3">Reader Information</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Reader Name</label>
-                      <p className="text-gray-900">{selectedReading.reader.name}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Username</label>
-                      <p className="text-gray-900">{selectedReading.reader.username}</p>
-                    </div>
-                  </div>
+                  <label className="text-sm font-medium text-gray-600">Recorded By</label>
+                  <p className="text-gray-900">{selectedReading.recordedBy || 'Not recorded'}</p>
                 </div>
 
-                {selectedReading.notes && (
+                {selectedReading.remarks && (
                   <div className="border-t pt-4">
-                    <h4 className="font-semibold text-gray-900 mb-2">Notes</h4>
-                    <p className="text-gray-700 bg-gray-50 p-3 rounded-md">{selectedReading.notes}</p>
+                    <h4 className="font-semibold text-gray-900 mb-2">Remarks</h4>
+                    <p className="text-gray-700 bg-gray-50 p-3 rounded-md">{selectedReading.remarks}</p>
                   </div>
                 )}
               </div>
