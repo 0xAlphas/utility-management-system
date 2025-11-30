@@ -11,6 +11,7 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:srilanka": "tsx prisma/seed-srilanka.ts",
+    "db:seed:12months": "tsx prisma/seed-12months-readings.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {
