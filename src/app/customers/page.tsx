@@ -6,12 +6,12 @@ import { showToast } from '@/lib/toast';
 
 interface Customer {
   id: string;
-  accountNumber: string;
-  name: string;
-  type: string;
-  contact: string;
+  accountNumber?: string;
+  name?: string;
+  type?: string;
+  contact?: string;
   email?: string;
-  address: string;
+  address?: string;
   isActive: boolean;
   createdAt: string;
 }
@@ -42,11 +42,11 @@ export default function CustomersPage() {
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(customer =>
-        customer.name.toLowerCase().includes(search) ||
-        customer.accountNumber.toLowerCase().includes(search) ||
-        customer.contact.toLowerCase().includes(search) ||
+        customer.name?.toLowerCase().includes(search) ||
+        customer.accountNumber?.toLowerCase().includes(search) ||
+        customer.contact?.toLowerCase().includes(search) ||
         customer.email?.toLowerCase().includes(search) ||
-        customer.address.toLowerCase().includes(search)
+        customer.address?.toLowerCase().includes(search)
       );
     }
 
@@ -284,18 +284,18 @@ export default function CustomersPage() {
                 {filteredCustomers.map((customer) => (
                   <tr key={customer.id} className="hover:bg-blue-50 transition-colors duration-150">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{customer.accountNumber}</div>
+                      <div className="text-sm font-medium text-gray-900">{customer.accountNumber || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{customer.name}</div>
+                      <div className="text-sm text-gray-900">{customer.name || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 ring-1 ring-blue-600">
-                        {customer.type}
+                        {customer.type || '-'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{customer.contact}</div>
+                      <div className="text-sm text-gray-900">{customer.contact || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{customer.email || '-'}</div>
@@ -337,7 +337,7 @@ export default function CustomersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">Account Number</p>
-                  <p className="font-semibold text-gray-900">{selectedCustomer.accountNumber}</p>
+                  <p className="font-semibold text-gray-900">{selectedCustomer.accountNumber || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Status</p>
@@ -345,15 +345,15 @@ export default function CustomersPage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Full Name</p>
-                  <p className="font-semibold text-gray-900">{selectedCustomer.name}</p>
+                  <p className="font-semibold text-gray-900">{selectedCustomer.name || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Customer Type</p>
-                  <p className="font-semibold text-gray-900">{selectedCustomer.type}</p>
+                  <p className="font-semibold text-gray-900">{selectedCustomer.type || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Contact Number</p>
-                  <p className="font-semibold text-gray-900">{selectedCustomer.contact}</p>
+                  <p className="font-semibold text-gray-900">{selectedCustomer.contact || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Email Address</p>
@@ -361,7 +361,7 @@ export default function CustomersPage() {
                 </div>
                 <div className="col-span-2">
                   <p className="text-sm text-gray-600">Address</p>
-                  <p className="font-semibold text-gray-900">{selectedCustomer.address}</p>
+                  <p className="font-semibold text-gray-900">{selectedCustomer.address || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Created Date</p>
