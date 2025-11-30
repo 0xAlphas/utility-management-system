@@ -78,7 +78,7 @@ export default function ReportsPage() {
   const [usageData, setUsageData] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState('month');
+  const [dateRange, setDateRange] = useState('year');
   const [activeTab, setActiveTab] = useState<'revenue' | 'usage' | 'defaulters'>('revenue');
 
   useEffect(() => {

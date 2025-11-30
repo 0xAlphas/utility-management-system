@@ -22,17 +22,41 @@ interface Complaint {
   };
 }
 
+interface Customer {
+  id: string;
+  name?: string;
+  accountNumber?: string;
+  contact?: string;
+  email?: string;
+}
+
 export default function ComplaintsPage() {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [priorityFilter, setPriorityFilter] = useState('ALL');
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [formData, setFormData] = useState({
+    customerId: '',
+    subject: '',
+    description: '',
+    priority: 'MEDIUM',
+  });
+  const [statusFormData, setStatusFormData] = useState({
+    status: '',
+    resolution: '',
+  });
 
   useEffect(() => {
     fetchComplaints();
+    fetchCustomers();
   }, []);
 
   const fetchComplaints = async () => {
@@ -56,6 +80,130 @@ export default function ComplaintsPage() {
       console.error('Error fetching complaints:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCustomers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/customers?limit=200', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch customers');
+      }
+
+      const data = await response.json();
+      setCustomers(data.data || []);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    }
+  };
+
+  const handleAddComplaint = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.customerId || !formData.subject || !formData.description) {
+      showToast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('token');
+
+      const response = await fetch('/api/complaints', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create complaint');
+      }
+
+      showToast.success('Complaint created successfully');
+      setShowAddModal(false);
+      setFormData({
+        customerId: '',
+        subject: '',
+        description: '',
+        priority: 'MEDIUM',
+      });
+      fetchComplaints();
+    } catch (err) {
+      showToast.error(err instanceof Error ? err.message : 'Failed to create complaint');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleStatusInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setStatusFormData({
+      ...statusFormData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const openStatusModal = (complaint: Complaint) => {
+    setSelectedComplaint(complaint);
+    setStatusFormData({
+      status: complaint.status,
+      resolution: complaint.resolution || '',
+    });
+    setShowStatusModal(true);
+  };
+
+  const handleUpdateStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedComplaint) return;
+
+    if (statusFormData.status === 'RESOLVED' && !statusFormData.resolution) {
+      showToast.error('Please provide a resolution for resolved complaints');
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`/api/complaints/${selectedComplaint.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(statusFormData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update complaint');
+      }
+
+      showToast.success('Complaint status updated successfully');
+      setShowStatusModal(false);
+      setShowDetailsModal(false);
+      fetchComplaints();
+    } catch (err) {
+      showToast.error(err instanceof Error ? err.message : 'Failed to update complaint');
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -136,6 +284,15 @@ export default function ComplaintsPage() {
             <h1 className="text-3xl font-bold text-gray-900">Complaints Management</h1>
             <p className="text-gray-600 mt-2">Track and manage customer complaints</p>
           </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transform hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          >
+            <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Record Complaint
+          </button>
         </div>
 
         {/* Stats Cards */}
@@ -318,12 +475,20 @@ export default function ComplaintsPage() {
                         {formatDate(complaint.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => viewComplaintDetails(complaint)}
-                          className="text-blue-600 hover:text-blue-900 transition-colors duration-150"
-                        >
-                          View Details
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => viewComplaintDetails(complaint)}
+                            className="text-blue-600 hover:text-blue-900 transition-colors duration-150"
+                          >
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => openStatusModal(complaint)}
+                            className="text-green-600 hover:text-green-900 transition-colors duration-150"
+                          >
+                            Update Status
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -446,6 +611,253 @@ export default function ComplaintsPage() {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Complaint Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">Record New Complaint</h3>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleAddComplaint}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Customer <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="customerId"
+                      value={formData.customerId}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <option value="">Select a customer</option>
+                      {customers.map((customer) => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.name || 'Unknown'} {customer.accountNumber ? `(${customer.accountNumber})` : ''} {customer.contact ? `- ${customer.contact}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Priority <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="priority"
+                      value={formData.priority}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <option value="LOW">Low</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="HIGH">High</option>
+                      <option value="URGENT">Urgent</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subject <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="Brief description of the issue"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      required
+                      rows={5}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="Detailed description of the complaint..."
+                    />
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-700">
+                          This complaint will be recorded with status "OPEN" and assigned for resolution. The customer will be notified.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-md hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? 'Recording...' : 'Record Complaint'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Update Status Modal */}
+        {showStatusModal && selectedComplaint && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">Update Complaint Status</h3>
+                <button
+                  onClick={() => setShowStatusModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateStatus}>
+                <div className="space-y-4">
+                  <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Customer</label>
+                        <p className="text-gray-900 font-semibold">{selectedComplaint.customer.name}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Subject</label>
+                        <p className="text-gray-900 font-semibold truncate">{selectedComplaint.subject}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Status <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="status"
+                      value={statusFormData.status}
+                      onChange={handleStatusInputChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="OPEN">Open</option>
+                      <option value="IN_PROGRESS">In Progress</option>
+                      <option value="RESOLVED">Resolved</option>
+                      <option value="CLOSED">Closed</option>
+                      <option value="REJECTED">Rejected</option>
+                    </select>
+                  </div>
+
+                  {(statusFormData.status === 'RESOLVED' || statusFormData.status === 'CLOSED') && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Resolution {statusFormData.status === 'RESOLVED' && <span className="text-red-500">*</span>}
+                      </label>
+                      <textarea
+                        name="resolution"
+                        value={statusFormData.resolution}
+                        onChange={handleStatusInputChange}
+                        required={statusFormData.status === 'RESOLVED'}
+                        rows={4}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="Describe how the complaint was resolved..."
+                      />
+                    </div>
+                  )}
+
+                  {statusFormData.status === 'REJECTED' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Reason for Rejection
+                      </label>
+                      <textarea
+                        name="resolution"
+                        value={statusFormData.resolution}
+                        onChange={handleStatusInputChange}
+                        rows={4}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="Explain why the complaint was rejected..."
+                      />
+                    </div>
+                  )}
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-blue-700">
+                          {statusFormData.status === 'RESOLVED' && 'Marking this complaint as resolved will notify the customer and update the resolution date.'}
+                          {statusFormData.status === 'IN_PROGRESS' && 'This complaint will be marked as actively being worked on.'}
+                          {statusFormData.status === 'CLOSED' && 'Closing this complaint will mark it as complete.'}
+                          {statusFormData.status === 'REJECTED' && 'Rejecting this complaint will close it without resolution.'}
+                          {statusFormData.status === 'OPEN' && 'This complaint will be marked as open and awaiting attention.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowStatusModal(false)}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updating}
+                    className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-md hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {updating ? 'Updating...' : 'Update Status'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
