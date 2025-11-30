@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { showToast } from '@/lib/toast';
 
@@ -27,13 +27,39 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
+  const filterCustomers = useCallback(() => {
+    let filtered = [...customers];
+
+    if (typeFilter !== 'ALL') {
+      filtered = filtered.filter(customer => customer.type === typeFilter);
+    }
+
+    if (statusFilter !== 'ALL') {
+      const isActive = statusFilter === 'ACTIVE';
+      filtered = filtered.filter(customer => customer.isActive === isActive);
+    }
+
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(customer =>
+        customer.name.toLowerCase().includes(search) ||
+        customer.accountNumber.toLowerCase().includes(search) ||
+        customer.contact.toLowerCase().includes(search) ||
+        customer.email?.toLowerCase().includes(search) ||
+        customer.address.toLowerCase().includes(search)
+      );
+    }
+
+    setFilteredCustomers(filtered);
+  }, [customers, searchTerm, typeFilter, statusFilter]);
+
   useEffect(() => {
     fetchCustomers();
   }, []);
 
   useEffect(() => {
     filterCustomers();
-  }, [customers, searchTerm, typeFilter, statusFilter]);
+  }, [filterCustomers]);
 
   const fetchCustomers = async () => {
     try {
@@ -63,32 +89,6 @@ export default function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const filterCustomers = () => {
-    let filtered = [...customers];
-
-    if (typeFilter !== 'ALL') {
-      filtered = filtered.filter(customer => customer.type === typeFilter);
-    }
-
-    if (statusFilter !== 'ALL') {
-      const isActive = statusFilter === 'ACTIVE';
-      filtered = filtered.filter(customer => customer.isActive === isActive);
-    }
-
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(customer =>
-        customer.name.toLowerCase().includes(search) ||
-        customer.accountNumber.toLowerCase().includes(search) ||
-        customer.contact.toLowerCase().includes(search) ||
-        customer.email?.toLowerCase().includes(search) ||
-        customer.address.toLowerCase().includes(search)
-      );
-    }
-
-    setFilteredCustomers(filtered);
   };
 
   const viewCustomerDetails = (customer: Customer) => {
@@ -122,9 +122,9 @@ export default function CustomersPage() {
     total: customers.length,
     active: customers.filter(c => c.isActive).length,
     inactive: customers.filter(c => !c.isActive).length,
-    residential: customers.filter(c => c.type === 'RESIDENTIAL').length,
-    commercial: customers.filter(c => c.type === 'COMMERCIAL').length,
-    industrial: customers.filter(c => c.type === 'INDUSTRIAL').length,
+    household: customers.filter(c => c.type === 'HOUSEHOLD').length,
+    business: customers.filter(c => c.type === 'BUSINESS').length,
+    government: customers.filter(c => c.type === 'GOVERNMENT').length,
   };
 
   return (
@@ -182,8 +182,8 @@ export default function CustomersPage() {
               </svg>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Residential</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.residential}</p>
+              <p className="text-sm font-medium text-gray-600">Household</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.household}</p>
             </div>
           </div>
         </div>
@@ -196,8 +196,8 @@ export default function CustomersPage() {
               </svg>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Commercial</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.commercial}</p>
+              <p className="text-sm font-medium text-gray-600">Business</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.business}</p>
             </div>
           </div>
         </div>
@@ -226,9 +226,9 @@ export default function CustomersPage() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="ALL">All Types</option>
-              <option value="RESIDENTIAL">Residential</option>
-              <option value="COMMERCIAL">Commercial</option>
-              <option value="INDUSTRIAL">Industrial</option>
+              <option value="HOUSEHOLD">Household</option>
+              <option value="BUSINESS">Business</option>
+              <option value="GOVERNMENT">Government</option>
             </select>
           </div>
 

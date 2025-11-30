@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { showToast } from '@/lib/toast';
 
@@ -43,13 +43,34 @@ export default function BillsPage() {
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
+  const filterBills = useCallback(() => {
+    let filtered = [...bills];
+
+    // Filter by status
+    if (statusFilter !== 'ALL') {
+      filtered = filtered.filter(bill => bill.status === statusFilter);
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(bill =>
+        bill.billNumber.toLowerCase().includes(search) ||
+        bill.customer.name.toLowerCase().includes(search) ||
+        bill.customer.contact.toLowerCase().includes(search)
+      );
+    }
+
+    setFilteredBills(filtered);
+  }, [bills, searchTerm, statusFilter]);
+
   useEffect(() => {
     fetchBills();
   }, []);
 
   useEffect(() => {
     filterBills();
-  }, [bills, searchTerm, statusFilter]);
+  }, [filterBills]);
 
   const fetchBills = async () => {
     try {
@@ -79,27 +100,6 @@ export default function BillsPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const filterBills = () => {
-    let filtered = [...bills];
-
-    // Filter by status
-    if (statusFilter !== 'ALL') {
-      filtered = filtered.filter(bill => bill.status === statusFilter);
-    }
-
-    // Filter by search term
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(bill =>
-        bill.billNumber.toLowerCase().includes(search) ||
-        bill.customer.name.toLowerCase().includes(search) ||
-        bill.customer.contact.toLowerCase().includes(search)
-      );
-    }
-
-    setFilteredBills(filtered);
   };
 
   const downloadBillPDF = async (billId: string) => {
