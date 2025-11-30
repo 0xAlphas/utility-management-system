@@ -7,17 +7,21 @@ import { showToast } from '@/lib/toast';
 interface Meter {
   id: string;
   meterNumber: string;
-  type: string;
   status: string;
   installationDate: string;
   lastReadingDate: string | null;
-  location: string;
+  location?: string;
   customerId: string;
   customer: {
     id: string;
-    accountNumber: string;
+    accountNumber?: string;
     name: string;
     address: string;
+  };
+  utilityType: {
+    id: string;
+    name: string;
+    unit: string;
   };
 }
 
@@ -61,11 +65,11 @@ export default function MetersPage() {
   const filteredMeters = meters.filter(meter => {
     const matchesSearch =
       meter.meterNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      meter.customer.accountNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (meter.customer.accountNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       meter.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      meter.location.toLowerCase().includes(searchQuery.toLowerCase());
+      (meter.location?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
 
-    const matchesType = typeFilter === 'ALL' || meter.type === typeFilter;
+    const matchesType = typeFilter === 'ALL' || meter.utilityType.name === typeFilter;
     const matchesStatus = statusFilter === 'ALL' || meter.status === statusFilter;
 
     return matchesSearch && matchesType && matchesStatus;
@@ -76,9 +80,9 @@ export default function MetersPage() {
     active: meters.filter(m => m.status === 'ACTIVE').length,
     inactive: meters.filter(m => m.status === 'INACTIVE').length,
     maintenance: meters.filter(m => m.status === 'MAINTENANCE').length,
-    electric: meters.filter(m => m.type === 'ELECTRIC').length,
-    water: meters.filter(m => m.type === 'WATER').length,
-    gas: meters.filter(m => m.type === 'GAS').length,
+    electric: meters.filter(m => m.utilityType.name === 'Electricity').length,
+    water: meters.filter(m => m.utilityType.name === 'Water').length,
+    gas: meters.filter(m => m.utilityType.name === 'Gas').length,
   };
 
   const viewMeterDetails = (meter: Meter) => {
@@ -106,9 +110,9 @@ export default function MetersPage() {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'ELECTRIC': return 'bg-blue-100 text-blue-800';
-      case 'WATER': return 'bg-cyan-100 text-cyan-800';
-      case 'GAS': return 'bg-orange-100 text-orange-800';
+      case 'Electricity': return 'bg-blue-100 text-blue-800';
+      case 'Water': return 'bg-cyan-100 text-cyan-800';
+      case 'Gas': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -209,9 +213,9 @@ export default function MetersPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="ALL">All Types</option>
-                <option value="ELECTRIC">Electric</option>
-                <option value="WATER">Water</option>
-                <option value="GAS">Gas</option>
+                <option value="Electricity">Electricity</option>
+                <option value="Water">Water</option>
+                <option value="Gas">Gas</option>
               </select>
             </div>
 
@@ -286,8 +290,8 @@ export default function MetersPage() {
                         <div className="text-sm font-medium text-gray-900">{meter.meterNumber}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getTypeColor(meter.type)}`}>
-                          {meter.type}
+                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getTypeColor(meter.utilityType.name)}`}>
+                          {meter.utilityType.name}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -349,8 +353,8 @@ export default function MetersPage() {
                   <div>
                     <label className="text-sm font-medium text-gray-600">Type</label>
                     <p>
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getTypeColor(selectedMeter.type)}`}>
-                        {selectedMeter.type}
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getTypeColor(selectedMeter.utilityType.name)}`}>
+                        {selectedMeter.utilityType.name}
                       </span>
                     </p>
                   </div>

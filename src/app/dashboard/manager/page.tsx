@@ -106,7 +106,7 @@ export default function ManagerDashboard() {
   const [usageData, setUsageData] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState('month');
+  const [period, setPeriod] = useState('year');
   const [userInfo, setUserInfo] = useState<any>(null);
 
   useEffect(() => {

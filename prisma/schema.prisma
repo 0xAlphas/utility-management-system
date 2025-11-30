@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -11,187 +8,140 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ===========================
-// STAFF & AUTHENTICATION
-// ===========================
+model bills {
+  id                String     @id
+  billNumber        String     @unique
+  billingMonth      Int
+  billingYear       Int
+  issueDate         DateTime   @default(now())
+  dueDate           DateTime
+  previousReading   Float?
+  currentReading    Float?
+  consumption       Float      @default(0)
+  totalAmount       Float
+  paidAmount        Float      @default(0)
+  outstandingAmount Float      @default(0)
+  status            String     @default("UNPAID")
+  remarks           String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime
+  customerId        String
+  customers         customers  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  payments          payments[]
 
-model Staff {
-  id           String   @id @default(uuid())
+  @@unique([customerId, billingMonth, billingYear])
+}
+
+model complaints {
+  id          String    @id
+  subject     String
+  description String
+  status      String    @default("OPEN")
+  priority    String    @default("MEDIUM")
+  resolution  String?
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+  updatedAt   DateTime
+  customerId  String
+  customers   customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model customers {
+  id         String       @id
+  name       String
+  type       String
+  contact    String
+  email      String?
+  address    String
+  city       String?
+  postalCode String?
+  isActive   Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime
+  bills      bills[]
+  complaints complaints[]
+  meters     meters[]
+}
+
+model meter_readings {
+  id           String   @id
+  readingValue Float
+  readingDate  DateTime @default(now())
+  remarks      String?
+  recordedBy   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  meterId      String
+  meters       meters   @relation(fields: [meterId], references: [id], onDelete: Cascade)
+}
+
+model meters {
+  id               String           @id
+  meterNumber      String           @unique
+  installationDate DateTime         @default(now())
+  lastReadingDate  DateTime?
+  status           String           @default("ACTIVE")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime
+  customerId       String
+  utilityTypeId    String
+  meter_readings   meter_readings[]
+  customers        customers        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  utility_types    utility_types    @relation(fields: [utilityTypeId], references: [id])
+
+  @@unique([customerId, utilityTypeId])
+}
+
+model payments {
+  id              String   @id
+  amount          Float
+  paymentDate     DateTime @default(now())
+  paymentMethod   String
+  referenceNumber String?
+  remarks         String?
+  recordedBy      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+  billId          String
+  bills           bills    @relation(fields: [billId], references: [id], onDelete: Cascade)
+}
+
+model staff {
+  id           String   @id
   username     String   @unique
   passwordHash String
   name         String
   email        String?  @unique
-  role         String   // ADMIN, METER_READER, CLERK, MANAGER
+  role         String
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@map("staff")
+  updatedAt    DateTime
 }
 
-// ===========================
-// CUSTOMERS
-// ===========================
-
-model Customer {
-  id          String       @id @default(uuid())
-  name        String
-  type        String       // HOUSEHOLD, BUSINESS, GOVERNMENT
-  contact     String
-  email       String?
-  address     String
-  city        String?
-  postalCode  String?
-  isActive    Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  meters      Meter[]
-  bills       Bill[]
-  complaints  Complaint[]
-
-  @@map("customers")
-}
-
-// ===========================
-// UTILITIES & METERS
-// ===========================
-
-model UtilityType {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  unit        String   // e.g., "kWh", "m³", "units"
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  meters      Meter[]
-  tariffs     Tariff[]
-
-  @@map("utility_types")
-}
-
-model Meter {
-  id               String      @id @default(uuid())
-  meterNumber      String      @unique
-  installationDate DateTime    @default(now())
-  lastReadingDate  DateTime?
-  status           String      @default("ACTIVE") // ACTIVE, INACTIVE, FAULTY, DISCONNECTED
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-
-  customerId       String
-  customer         Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  utilityTypeId    String
-  utilityType      UtilityType @relation(fields: [utilityTypeId], references: [id], onDelete: NoAction)
-
-  readings         MeterReading[]
-
-  @@unique([customerId, utilityTypeId])
-  @@map("meters")
-}
-
-model MeterReading {
-  id           String   @id @default(uuid())
-  readingValue Float
-  readingDate  DateTime @default(now())
-  remarks      String?
-  recordedBy   String?  // Staff username or ID
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  meterId      String
-  meter        Meter    @relation(fields: [meterId], references: [id], onDelete: Cascade)
-
-  @@map("meter_readings")
-}
-
-// ===========================
-// TARIFFS & BILLING
-// ===========================
-
-model Tariff {
-  id          String   @id @default(uuid())
-  name        String
-  minUsage    Float    @default(0)
-  maxUsage    Float?   // null means unlimited
-  rate        Float
-  fixedCharge Float    @default(0)
-  isActive    Boolean  @default(true)
-  effectiveFrom DateTime @default(now())
+model tariffs {
+  id            String        @id
+  name          String
+  minUsage      Float         @default(0)
+  maxUsage      Float?
+  rate          Float
+  fixedCharge   Float         @default(0)
+  isActive      Boolean       @default(true)
+  effectiveFrom DateTime      @default(now())
   effectiveTo   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  utilityTypeId String
-  utilityType   UtilityType @relation(fields: [utilityTypeId], references: [id], onDelete: NoAction)
-
-  @@map("tariffs")
-}
-
-model Bill {
-  id                String      @id @default(uuid())
-  billNumber        String      @unique
-  billingMonth      Int         // 1-12
-  billingYear       Int
-  issueDate         DateTime    @default(now())
-  dueDate           DateTime
-  previousReading   Float?
-  currentReading    Float?
-  consumption       Float       @default(0)
-  totalAmount       Float
-  paidAmount        Float       @default(0)
-  outstandingAmount Float       @default(0)
-  status            String      @default("UNPAID") // UNPAID, PARTIALLY_PAID, PAID, OVERDUE, CANCELLED
-  remarks           String?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-
-  customerId        String
-  customer          Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  payments          Payment[]
-
-  @@unique([customerId, billingMonth, billingYear])
-  @@map("bills")
-}
-
-model Payment {
-  id            String        @id @default(uuid())
-  amount        Float
-  paymentDate   DateTime      @default(now())
-  paymentMethod String        // CASH, CARD, BANK_TRANSFER, ONLINE, CHEQUE, MOBILE_PAYMENT
-  referenceNumber String?
-  remarks       String?
-  recordedBy    String?       // Staff username or ID
   createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  billId        String
-  bill          Bill          @relation(fields: [billId], references: [id], onDelete: Cascade)
-
-  @@map("payments")
+  updatedAt     DateTime
+  utilityTypeId String
+  utility_types utility_types @relation(fields: [utilityTypeId], references: [id])
 }
 
-// ===========================
-// COMPLAINTS & SUPPORT
-// ===========================
-
-model Complaint {
-  id          String          @id @default(uuid())
-  subject     String
-  description String
-  status      String          @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED, REJECTED
-  priority    String          @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
-  resolution  String?
-  createdAt   DateTime        @default(now())
-  resolvedAt  DateTime?
-  updatedAt   DateTime        @updatedAt
-
-  customerId  String
-  customer    Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  @@map("complaints")
+model utility_types {
+  id          String    @id
+  name        String    @unique
+  description String?
+  unit        String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  meters      meters[]
+  tariffs     tariffs[]
 }

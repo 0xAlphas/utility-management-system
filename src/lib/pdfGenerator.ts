@@ -51,18 +51,14 @@ interface Bill {
 }
 
 export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
-  // Create a new PDF document
   const pdfDoc = await PDFDocument.create();
 
-  // Add a page
-  const page = pdfDoc.addPage([595, 842]); // A4 size
+  const page = pdfDoc.addPage([595, 842]);
   const { width, height } = page.getSize();
 
-  // Embed fonts
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  // Parse bill details from remarks
   let billDetails: BillDetails = {};
   try {
     billDetails = bill.remarks ? JSON.parse(bill.remarks) : {};
@@ -70,7 +66,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
     billDetails = {};
   }
 
-  // Define colors
   const primaryColor = rgb(0.2, 0.4, 0.8);
   const textColor = rgb(0.1, 0.1, 0.1);
   const lightGray = rgb(0.95, 0.95, 0.95);
@@ -78,11 +73,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
 
   let yPosition = height - 50;
 
-  // ===========================
-  // HEADER SECTION
-  // ===========================
-
-  // Company name
   page.drawText('UTILITY MANAGEMENT SYSTEM', {
     x: 50,
     y: yPosition,
@@ -102,7 +92,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
 
   yPosition -= 40;
 
-  // Draw header divider line
   page.drawLine({
     start: { x: 50, y: yPosition },
     end: { x: width - 50, y: yPosition },
@@ -112,7 +101,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
 
   yPosition -= 30;
 
-  // Bill title and info (two columns)
   page.drawText('UTILITY BILL', {
     x: 50,
     y: yPosition,
@@ -121,7 +109,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
     color: textColor,
   });
 
-  // Right-aligned bill info
   const billInfoX = width - 200;
   page.drawText(`Bill Number: ${bill.billNumber}`, {
     x: billInfoX,
@@ -179,10 +166,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
 
   yPosition -= 40;
 
-  // ===========================
-  // CUSTOMER INFORMATION
-  // ===========================
-
   page.drawText('CUSTOMER INFORMATION', {
     x: 50,
     y: yPosition,
@@ -193,7 +176,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
 
   yPosition -= 20;
 
-  // Draw gray background for customer info
   page.drawRectangle({
     x: 50,
     y: yPosition - 60,
@@ -261,10 +243,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
   });
 
   yPosition -= 35;
-
-  // ===========================
-  // METER & CONSUMPTION DETAILS
-  // ===========================
 
   if (billDetails.utilityType || billDetails.meterNumber) {
     page.drawText('METER & CONSUMPTION DETAILS', {
@@ -334,10 +312,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
     yPosition -= 30;
   }
 
-  // ===========================
-  // TARIFF BREAKDOWN
-  // ===========================
-
   if (billDetails.tariffBreakdown && billDetails.tariffBreakdown.length > 0) {
     page.drawText('TARIFF BREAKDOWN', {
       x: 50,
@@ -349,11 +323,9 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
 
     yPosition -= 25;
 
-    // Table headers
     const tableX = 60;
     const colWidths = [200, 80, 80, 80];
 
-    // Header background
     page.drawRectangle({
       x: tableX - 5,
       y: yPosition - 12,
@@ -396,7 +368,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
 
     yPosition -= 20;
 
-    // Table rows
     billDetails.tariffBreakdown.forEach((tariff) => {
       page.drawText(tariff.name, {
         x: tableX,
@@ -436,10 +407,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
     yPosition -= 10;
   }
 
-  // ===========================
-  // BILLING SUMMARY
-  // ===========================
-
   page.drawText('BILLING SUMMARY', {
     x: 50,
     y: yPosition,
@@ -450,7 +417,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
 
   yPosition -= 25;
 
-  // Summary box
   const summaryX = width - 250;
 
   page.drawRectangle({
@@ -518,7 +484,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
 
   yPosition -= 30;
 
-  // Status badge
   const statusColors: Record<string, { bg: any; text: any }> = {
     PAID: { bg: rgb(0, 0.6, 0), text: rgb(1, 1, 1) },
     UNPAID: { bg: rgb(0.8, 0, 0), text: rgb(1, 1, 1) },
@@ -545,10 +510,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
   });
 
   yPosition -= 35;
-
-  // ===========================
-  // PAYMENT HISTORY
-  // ===========================
 
   if (bill.payments && bill.payments.length > 0) {
     page.drawText('PAYMENT HISTORY', {
@@ -594,10 +555,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
     }
   }
 
-  // ===========================
-  // FOOTER
-  // ===========================
-
   const footerY = 50;
 
   page.drawLine({
@@ -623,7 +580,6 @@ export async function generateBillPDF(bill: Bill): Promise<Uint8Array> {
     color: grayText,
   });
 
-  // Serialize the PDFDocument to bytes
   const pdfBytes = await pdfDoc.save();
 
   return pdfBytes;
