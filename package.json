@@ -10,6 +10,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:srilanka": "tsx prisma/seed-srilanka.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {
@@ -40,5 +41,5 @@
     "tsx": "^4.19.0",
     "typescript": "^5"
   },
-  "packageManager": "pnpm@9"
+  "packageManager": "pnpm@9.0.0"
 }
