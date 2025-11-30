@@ -47,6 +47,14 @@ export default function AdminDashboard() {
   const [utilityTypes, setUtilityTypes] = useState<UtilityType[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   // Modal states
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showMeterModal, setShowMeterModal] = useState(false);
@@ -414,7 +422,7 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{meter.customer.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{meter.utilityType.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(meter.installationDate).toLocaleDateString()}
+                      {formatDate(meter.installationDate)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-3 py-1 text-xs font-semibold rounded-full ${

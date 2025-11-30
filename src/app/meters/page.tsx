@@ -7,17 +7,21 @@ import { showToast } from '@/lib/toast';
 interface Meter {
   id: string;
   meterNumber: string;
-  type: string;
   status: string;
   installationDate: string;
   lastReadingDate: string | null;
-  location: string;
+  location?: string;
   customerId: string;
   customer: {
     id: string;
-    accountNumber: string;
+    accountNumber?: string;
     name: string;
     address: string;
+  };
+  utilityType: {
+    id: string;
+    name: string;
+    unit: string;
   };
 }
 
@@ -61,11 +65,11 @@ export default function MetersPage() {
   const filteredMeters = meters.filter(meter => {
     const matchesSearch =
       meter.meterNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      meter.customer.accountNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (meter.customer.accountNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       meter.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      meter.location.toLowerCase().includes(searchQuery.toLowerCase());
+      (meter.location?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
 
-    const matchesType = typeFilter === 'ALL' || meter.type === typeFilter;
+    const matchesType = typeFilter === 'ALL' || meter.utilityType.name === typeFilter;
     const matchesStatus = statusFilter === 'ALL' || meter.status === statusFilter;
 
     return matchesSearch && matchesType && matchesStatus;
@@ -76,9 +80,9 @@ export default function MetersPage() {
     active: meters.filter(m => m.status === 'ACTIVE').length,
     inactive: meters.filter(m => m.status === 'INACTIVE').length,
     maintenance: meters.filter(m => m.status === 'MAINTENANCE').length,
-    electric: meters.filter(m => m.type === 'ELECTRIC').length,
-    water: meters.filter(m => m.type === 'WATER').length,
-    gas: meters.filter(m => m.type === 'GAS').length,
+    electric: meters.filter(m => m.utilityType.name === 'Electricity').length,
+    water: meters.filter(m => m.utilityType.name === 'Water').length,
+    gas: meters.filter(m => m.utilityType.name === 'Gas').length,
   };
 
   const viewMeterDetails = (meter: Meter) => {
@@ -96,11 +100,19 @@ export default function MetersPage() {
     }
   };
 
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'ELECTRIC': return 'bg-blue-100 text-blue-800';
-      case 'WATER': return 'bg-cyan-100 text-cyan-800';
-      case 'GAS': return 'bg-orange-100 text-orange-800';
+      case 'Electricity': return 'bg-blue-100 text-blue-800';
+      case 'Water': return 'bg-cyan-100 text-cyan-800';
+      case 'Gas': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -201,9 +213,9 @@ export default function MetersPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="ALL">All Types</option>
-                <option value="ELECTRIC">Electric</option>
-                <option value="WATER">Water</option>
-                <option value="GAS">Gas</option>
+                <option value="Electricity">Electricity</option>
+                <option value="Water">Water</option>
+                <option value="Gas">Gas</option>
               </select>
             </div>
 
@@ -278,8 +290,8 @@ export default function MetersPage() {
                         <div className="text-sm font-medium text-gray-900">{meter.meterNumber}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getTypeColor(meter.type)}`}>
-                          {meter.type}
+                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getTypeColor(meter.utilityType.name)}`}>
+                          {meter.utilityType.name}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -295,10 +307,10 @@ export default function MetersPage() {
                         <div className="text-sm text-gray-900">{meter.location}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(meter.installationDate).toLocaleDateString()}
+                        {formatDate(meter.installationDate)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {meter.lastReadingDate ? new Date(meter.lastReadingDate).toLocaleDateString() : 'No readings'}
+                        {meter.lastReadingDate ? formatDate(meter.lastReadingDate) : 'No readings'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
@@ -341,8 +353,8 @@ export default function MetersPage() {
                   <div>
                     <label className="text-sm font-medium text-gray-600">Type</label>
                     <p>
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getTypeColor(selectedMeter.type)}`}>
-                        {selectedMeter.type}
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getTypeColor(selectedMeter.utilityType.name)}`}>
+                        {selectedMeter.utilityType.name}
                       </span>
                     </p>
                   </div>
@@ -356,7 +368,7 @@ export default function MetersPage() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Installation Date</label>
-                    <p className="text-gray-900">{new Date(selectedMeter.installationDate).toLocaleDateString()}</p>
+                    <p className="text-gray-900">{formatDate(selectedMeter.installationDate)}</p>
                   </div>
                 </div>
 
@@ -389,7 +401,7 @@ export default function MetersPage() {
                       <label className="text-sm font-medium text-gray-600">Last Reading Date</label>
                       <p className="text-gray-900">
                         {selectedMeter.lastReadingDate
-                          ? new Date(selectedMeter.lastReadingDate).toLocaleDateString()
+                          ? formatDate(selectedMeter.lastReadingDate)
                           : 'No readings yet'}
                       </p>
                     </div>

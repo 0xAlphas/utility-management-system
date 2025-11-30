@@ -21,17 +21,38 @@ interface Tariff {
   };
 }
 
+interface UtilityType {
+  id: string;
+  name: string;
+  unit: string;
+}
+
 export default function TariffsPage() {
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
+  const [utilityTypes, setUtilityTypes] = useState<UtilityType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [utilityTypeFilter, setUtilityTypeFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedTariff, setSelectedTariff] = useState<Tariff | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    utilityTypeId: '',
+    minUsage: '0',
+    maxUsage: '',
+    rate: '',
+    fixedCharge: '0',
+    effectiveFrom: new Date().toISOString().split('T')[0],
+    effectiveTo: '',
+  });
 
   useEffect(() => {
     fetchTariffs();
+    fetchUtilityTypes();
   }, []);
 
   const fetchTariffs = async () => {
@@ -55,6 +76,120 @@ export default function TariffsPage() {
       console.error('Error fetching tariffs:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUtilityTypes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/utility-types', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch utility types');
+      }
+
+      const data = await response.json();
+      setUtilityTypes(data.data || []);
+    } catch (error) {
+      console.error('Error fetching utility types:', error);
+    }
+  };
+
+  const handleAddTariff = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name || !formData.utilityTypeId || !formData.rate) {
+      showToast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('token');
+
+      const payload = {
+        name: formData.name,
+        utilityTypeId: formData.utilityTypeId,
+        minUsage: parseFloat(formData.minUsage) || 0,
+        maxUsage: formData.maxUsage ? parseFloat(formData.maxUsage) : null,
+        rate: parseFloat(formData.rate),
+        fixedCharge: parseFloat(formData.fixedCharge) || 0,
+        effectiveFrom: formData.effectiveFrom,
+        effectiveTo: formData.effectiveTo || null,
+      };
+
+      const response = await fetch('/api/tariffs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create tariff');
+      }
+
+      showToast.success('Tariff created successfully');
+      setShowAddModal(false);
+      setFormData({
+        name: '',
+        utilityTypeId: '',
+        minUsage: '0',
+        maxUsage: '',
+        rate: '',
+        fixedCharge: '0',
+        effectiveFrom: new Date().toISOString().split('T')[0],
+        effectiveTo: '',
+      });
+      fetchTariffs();
+    } catch (err) {
+      showToast.error(err instanceof Error ? err.message : 'Failed to create tariff');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleDeleteTariff = async (tariffId: string) => {
+    if (!confirm('Are you sure you want to delete this tariff? This will deactivate it.')) {
+      return;
+    }
+
+    try {
+      setDeleting(tariffId);
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`/api/tariffs/${tariffId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete tariff');
+      }
+
+      showToast.success('Tariff deleted successfully');
+      fetchTariffs();
+    } catch (err) {
+      showToast.error(err instanceof Error ? err.message : 'Failed to delete tariff');
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -109,6 +244,15 @@ export default function TariffsPage() {
             <h1 className="text-3xl font-bold text-gray-900">Tariffs</h1>
             <p className="text-gray-600 mt-2">Manage utility pricing and tariff structures</p>
           </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Tariff
+          </button>
         </div>
 
         {/* Stats Cards */}
@@ -301,12 +445,21 @@ export default function TariffsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => viewTariffDetails(tariff)}
-                          className="text-blue-600 hover:text-blue-900 transition-colors duration-150"
-                        >
-                          View Details
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => viewTariffDetails(tariff)}
+                            className="text-blue-600 hover:text-blue-900 transition-colors duration-150"
+                          >
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTariff(tariff.id)}
+                            disabled={deleting === tariff.id}
+                            className="text-red-600 hover:text-red-900 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {deleting === tariff.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -406,6 +559,174 @@ export default function TariffsPage() {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Tariff Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">Add New Tariff</h3>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleAddTariff}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tariff Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter tariff name"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Utility Type <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="utilityTypeId"
+                      value={formData.utilityTypeId}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select utility type</option>
+                      {utilityTypes.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.name} ({type.unit})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Minimum Usage <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="minUsage"
+                      value={formData.minUsage}
+                      onChange={handleInputChange}
+                      required
+                      min="0"
+                      step="0.01"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Maximum Usage (leave empty for unlimited)
+                    </label>
+                    <input
+                      type="number"
+                      name="maxUsage"
+                      value={formData.maxUsage}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Unlimited"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Rate per Unit <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="rate"
+                      value={formData.rate}
+                      onChange={handleInputChange}
+                      required
+                      min="0"
+                      step="0.0001"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Fixed Charge
+                    </label>
+                    <input
+                      type="number"
+                      name="fixedCharge"
+                      value={formData.fixedCharge}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Effective From <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="effectiveFrom"
+                      value={formData.effectiveFrom}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Effective To (optional)
+                    </label>
+                    <input
+                      type="date"
+                      name="effectiveTo"
+                      value={formData.effectiveTo}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-md hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? 'Creating...' : 'Create Tariff'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

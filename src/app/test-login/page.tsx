@@ -1,15 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export default function TestLoginPage() {
-  // Set body background to white
-  useEffect(() => {
-    document.body.style.backgroundColor = '#f9fafb';
-    return () => {
-      document.body.style.backgroundColor = '';
-    };
-  }, []);
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('password123');
   const [loading, setLoading] = useState(false);
@@ -79,23 +72,16 @@ export default function TestLoginPage() {
   return (
     <div style={{
       maxWidth: '800px',
-      margin: '0 auto',
-      padding: '40px 20px',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      minHeight: '100vh'
+      margin: '50px auto',
+      padding: '20px',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
     }}>
-      <div style={{
-        backgroundColor: '#ffffff',
-        padding: '30px',
-        borderRadius: '12px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }}>
-        <h1 style={{ color: '#1e293b', marginBottom: '10px', fontSize: '28px' }}>
-          🔐 API Login Test Page
-        </h1>
-        <p style={{ color: '#64748b', marginBottom: '30px', fontSize: '14px' }}>
-          Test your Utility Management System API
-        </p>
+      <h1 style={{ color: '#2563eb', marginBottom: '10px' }}>
+        🔐 API Login Test Page
+      </h1>
+      <p style={{ color: '#64748b', marginBottom: '30px' }}>
+        Test your Utility Management System API
+      </p>
 
       {/* Login Form */}
       <div style={{
@@ -105,10 +91,10 @@ export default function TestLoginPage() {
         marginBottom: '20px',
         border: '1px solid #e2e8f0'
       }}>
-        <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#1e293b', fontWeight: '600' }}>Step 1: Login</h2>
+        <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>Step 1: Login</h2>
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: '#1e293b' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
               Username:
             </label>
             <input
@@ -120,14 +106,12 @@ export default function TestLoginPage() {
                 padding: '8px 12px',
                 borderRadius: '6px',
                 border: '1px solid #cbd5e1',
-                fontSize: '14px',
-                color: '#1e293b',
-                backgroundColor: '#ffffff'
+                fontSize: '14px'
               }}
             />
           </div>
           <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: '#1e293b' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
               Password:
             </label>
             <input
@@ -139,9 +123,7 @@ export default function TestLoginPage() {
                 padding: '8px 12px',
                 borderRadius: '6px',
                 border: '1px solid #cbd5e1',
-                fontSize: '14px',
-                color: '#1e293b',
-                backgroundColor: '#ffffff'
+                fontSize: '14px'
               }}
             />
           </div>
@@ -169,9 +151,7 @@ export default function TestLoginPage() {
           padding: '10px',
           backgroundColor: '#fef3c7',
           borderRadius: '6px',
-          fontSize: '13px',
-          color: '#78350f',
-          border: '1px solid #fde68a'
+          fontSize: '13px'
         }}>
           <strong>Default Credentials:</strong><br />
           admin / password123 (Admin)<br />
@@ -219,16 +199,13 @@ export default function TestLoginPage() {
           <div style={{ marginTop: '15px' }}>
             <strong>JWT Token:</strong>
             <pre style={{
-              backgroundColor: '#ffffff',
-              color: '#059669',
+              backgroundColor: '#1e293b',
+              color: '#10b981',
               padding: '10px',
               borderRadius: '6px',
               overflow: 'auto',
               fontSize: '11px',
-              marginTop: '5px',
-              border: '1px solid #d1d5db',
-              wordBreak: 'break-all',
-              whiteSpace: 'pre-wrap'
+              marginTop: '5px'
             }}>
               {token}
             </pre>
@@ -245,11 +222,11 @@ export default function TestLoginPage() {
           marginBottom: '20px',
           border: '1px solid #e2e8f0'
         }}>
-          <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#1e293b', fontWeight: '600' }}>
+          <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>
             Step 2: Test Other API Endpoints
           </h2>
           <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: '#1e293b' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
               Select Endpoint:
             </label>
             <select
@@ -260,9 +237,7 @@ export default function TestLoginPage() {
                 padding: '8px 12px',
                 borderRadius: '6px',
                 border: '1px solid #cbd5e1',
-                fontSize: '14px',
-                color: '#1e293b',
-                backgroundColor: '#ffffff'
+                fontSize: '14px'
               }}
             >
               <option value="/api/customers">GET /api/customers</option>
@@ -303,19 +278,17 @@ export default function TestLoginPage() {
           borderRadius: '8px',
           border: '1px solid #e2e8f0'
         }}>
-          <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#1e293b' }}>
+          <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>
             📊 API Response
           </h2>
           <pre style={{
-            backgroundColor: '#ffffff',
-            color: '#1e293b',
+            backgroundColor: '#1e293b',
+            color: '#94a3b8',
             padding: '15px',
             borderRadius: '6px',
             overflow: 'auto',
             fontSize: '12px',
-            maxHeight: '500px',
-            border: '1px solid #d1d5db',
-            lineHeight: '1.6'
+            maxHeight: '500px'
           }}>
             {JSON.stringify(testResponse, null, 2)}
           </pre>
@@ -330,25 +303,24 @@ export default function TestLoginPage() {
         borderRadius: '8px',
         border: '1px solid #bfdbfe'
       }}>
-        <h3 style={{ fontSize: '16px', marginBottom: '10px', color: '#1e293b' }}>📚 Quick Links</h3>
-        <ul style={{ margin: 0, paddingLeft: '20px', color: '#475569' }}>
+        <h3 style={{ fontSize: '16px', marginBottom: '10px' }}>📚 Quick Links</h3>
+        <ul style={{ margin: 0, paddingLeft: '20px' }}>
           <li style={{ marginBottom: '5px' }}>
-            <a href="/API_DOCUMENTATION.md" style={{ color: '#2563eb', textDecoration: 'none' }}>
+            <a href="/API_DOCUMENTATION.md" style={{ color: '#2563eb' }}>
               API Documentation
             </a>
           </li>
           <li style={{ marginBottom: '5px' }}>
-            <a href="/SETUP_GUIDE.md" style={{ color: '#2563eb', textDecoration: 'none' }}>
+            <a href="/SETUP_GUIDE.md" style={{ color: '#2563eb' }}>
               Setup Guide
             </a>
           </li>
           <li>
-            <a href="/" style={{ color: '#2563eb', textDecoration: 'none' }}>
+            <a href="/" style={{ color: '#2563eb' }}>
               Home
             </a>
           </li>
         </ul>
-      </div>
       </div>
     </div>
   );

@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { showToast } from '@/lib/toast';
 
 interface Customer {
   id: string;
-  accountNumber: string;
-  name: string;
-  type: string;
-  contact: string;
+  accountNumber?: string;
+  name?: string;
+  type?: string;
+  contact?: string;
   email?: string;
-  address: string;
+  address?: string;
   isActive: boolean;
   createdAt: string;
 }
@@ -26,6 +26,43 @@ export default function CustomersPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    type: 'HOUSEHOLD',
+    contact: '',
+    email: '',
+    address: '',
+    city: '',
+    postalCode: '',
+  });
+
+  const filterCustomers = useCallback(() => {
+    let filtered = [...customers];
+
+    if (typeFilter !== 'ALL') {
+      filtered = filtered.filter(customer => customer.type === typeFilter);
+    }
+
+    if (statusFilter !== 'ALL') {
+      const isActive = statusFilter === 'ACTIVE';
+      filtered = filtered.filter(customer => customer.isActive === isActive);
+    }
+
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(customer =>
+        customer.name?.toLowerCase().includes(search) ||
+        customer.accountNumber?.toLowerCase().includes(search) ||
+        customer.contact?.toLowerCase().includes(search) ||
+        customer.email?.toLowerCase().includes(search) ||
+        customer.address?.toLowerCase().includes(search)
+      );
+    }
+
+    setFilteredCustomers(filtered);
+  }, [customers, searchTerm, typeFilter, statusFilter]);
 
   useEffect(() => {
     fetchCustomers();
@@ -33,7 +70,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     filterCustomers();
-  }, [customers, searchTerm, typeFilter, statusFilter]);
+  }, [filterCustomers]);
 
   const fetchCustomers = async () => {
     try {
@@ -65,35 +102,61 @@ export default function CustomersPage() {
     }
   };
 
-  const filterCustomers = () => {
-    let filtered = [...customers];
-
-    if (typeFilter !== 'ALL') {
-      filtered = filtered.filter(customer => customer.type === typeFilter);
-    }
-
-    if (statusFilter !== 'ALL') {
-      const isActive = statusFilter === 'ACTIVE';
-      filtered = filtered.filter(customer => customer.isActive === isActive);
-    }
-
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(customer =>
-        customer.name.toLowerCase().includes(search) ||
-        customer.accountNumber.toLowerCase().includes(search) ||
-        customer.contact.toLowerCase().includes(search) ||
-        customer.email?.toLowerCase().includes(search) ||
-        customer.address.toLowerCase().includes(search)
-      );
-    }
-
-    setFilteredCustomers(filtered);
-  };
-
   const viewCustomerDetails = (customer: Customer) => {
     setSelectedCustomer(customer);
     setShowDetailsModal(true);
+  };
+
+  const handleAddCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name || !formData.contact || !formData.address) {
+      showToast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('token');
+
+      const response = await fetch('/api/customers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create customer');
+      }
+
+      showToast.success('Customer created successfully');
+      setShowAddModal(false);
+      setFormData({
+        name: '',
+        type: 'HOUSEHOLD',
+        contact: '',
+        email: '',
+        address: '',
+        city: '',
+        postalCode: '',
+      });
+      fetchCustomers();
+    } catch (err) {
+      showToast.error(err instanceof Error ? err.message : 'Failed to create customer');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const formatDate = (dateString: string): string => {
@@ -122,16 +185,27 @@ export default function CustomersPage() {
     total: customers.length,
     active: customers.filter(c => c.isActive).length,
     inactive: customers.filter(c => !c.isActive).length,
-    residential: customers.filter(c => c.type === 'RESIDENTIAL').length,
-    commercial: customers.filter(c => c.type === 'COMMERCIAL').length,
-    industrial: customers.filter(c => c.type === 'INDUSTRIAL').length,
+    household: customers.filter(c => c.type === 'HOUSEHOLD').length,
+    business: customers.filter(c => c.type === 'BUSINESS').length,
+    government: customers.filter(c => c.type === 'GOVERNMENT').length,
   };
 
   return (
     <DashboardLayout allowedRoles={['ADMIN', 'CLERK']}>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Customers Management</h1>
-        <p className="text-gray-600 mt-2">Manage customer accounts and information</p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Customers Management</h1>
+          <p className="text-gray-600 mt-2">Manage customer accounts and information</p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Customer
+        </button>
       </div>
 
       {error && (
@@ -182,8 +256,8 @@ export default function CustomersPage() {
               </svg>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Residential</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.residential}</p>
+              <p className="text-sm font-medium text-gray-600">Household</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.household}</p>
             </div>
           </div>
         </div>
@@ -196,8 +270,8 @@ export default function CustomersPage() {
               </svg>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Commercial</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.commercial}</p>
+              <p className="text-sm font-medium text-gray-600">Business</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.business}</p>
             </div>
           </div>
         </div>
@@ -226,9 +300,9 @@ export default function CustomersPage() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="ALL">All Types</option>
-              <option value="RESIDENTIAL">Residential</option>
-              <option value="COMMERCIAL">Commercial</option>
-              <option value="INDUSTRIAL">Industrial</option>
+              <option value="HOUSEHOLD">Household</option>
+              <option value="BUSINESS">Business</option>
+              <option value="GOVERNMENT">Government</option>
             </select>
           </div>
 
@@ -284,18 +358,18 @@ export default function CustomersPage() {
                 {filteredCustomers.map((customer) => (
                   <tr key={customer.id} className="hover:bg-blue-50 transition-colors duration-150">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{customer.accountNumber}</div>
+                      <div className="text-sm font-medium text-gray-900">{customer.accountNumber || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{customer.name}</div>
+                      <div className="text-sm text-gray-900">{customer.name || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 ring-1 ring-blue-600">
-                        {customer.type}
+                        {customer.type || '-'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{customer.contact}</div>
+                      <div className="text-sm text-gray-900">{customer.contact || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{customer.email || '-'}</div>
@@ -337,7 +411,7 @@ export default function CustomersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">Account Number</p>
-                  <p className="font-semibold text-gray-900">{selectedCustomer.accountNumber}</p>
+                  <p className="font-semibold text-gray-900">{selectedCustomer.accountNumber || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Status</p>
@@ -345,15 +419,15 @@ export default function CustomersPage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Full Name</p>
-                  <p className="font-semibold text-gray-900">{selectedCustomer.name}</p>
+                  <p className="font-semibold text-gray-900">{selectedCustomer.name || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Customer Type</p>
-                  <p className="font-semibold text-gray-900">{selectedCustomer.type}</p>
+                  <p className="font-semibold text-gray-900">{selectedCustomer.type || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Contact Number</p>
-                  <p className="font-semibold text-gray-900">{selectedCustomer.contact}</p>
+                  <p className="font-semibold text-gray-900">{selectedCustomer.contact || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Email Address</p>
@@ -361,7 +435,7 @@ export default function CustomersPage() {
                 </div>
                 <div className="col-span-2">
                   <p className="text-sm text-gray-600">Address</p>
-                  <p className="font-semibold text-gray-900">{selectedCustomer.address}</p>
+                  <p className="font-semibold text-gray-900">{selectedCustomer.address || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Created Date</p>
@@ -378,6 +452,150 @@ export default function CustomersPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Customer Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Add New Customer</h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleAddCustomer}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter customer name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Customer Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="type"
+                    value={formData.type}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="HOUSEHOLD">Household</option>
+                    <option value="BUSINESS">Business</option>
+                    <option value="GOVERNMENT">Government</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Contact Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="contact"
+                    value={formData.contact}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter contact number"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter email address"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Address <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    required
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter full address"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter city"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Postal Code
+                  </label>
+                  <input
+                    type="text"
+                    name="postalCode"
+                    value={formData.postalCode}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter postal code"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-md hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? 'Creating...' : 'Create Customer'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
