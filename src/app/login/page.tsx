@@ -2,6 +2,7 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { setAuthData, getDefaultRouteForRole } from '@/lib/auth-client';
 
 interface LoginResponse {
@@ -268,14 +269,14 @@ export default function LoginPage() {
         {/* Footer Links */}
         <div className="mt-8 text-center space-y-3">
           <div className="flex items-center justify-center gap-3">
-            <a
+            <Link
               href="/test-login"
               className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
             >
               API Test
-            </a>
+            </Link>
             <span className="text-gray-400">•</span>
-            <a
+            <Link
               href="/"
               className="inline-flex items-center text-sm text-gray-600 hover:text-blue-600 transition-colors group"
             >
@@ -283,7 +284,7 @@ export default function LoginPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               Back to Home
-            </a>
+            </Link>
           </div>
         </div>
 
