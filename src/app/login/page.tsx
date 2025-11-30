@@ -286,7 +286,7 @@ export default function LoginPage() {
               Back to Home
             </Link>
           </div>
-a        </div>
+        </div>
 
         {/* Copyright */}
         <p className="text-center text-xs text-gray-500 mt-8">
