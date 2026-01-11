@@ -22,10 +22,7 @@ export interface BillCalculation {
   fixedCharges: number;
 }
 
-/**
- * Calculate bill amount based on consumption and tariff slabs
- * Supports slab-based billing (e.g., first 100 units at rate1, next 100 at rate2, etc.)
- */
+
 export async function calculateBillAmount(
   utilityTypeId: string,
   consumption: number

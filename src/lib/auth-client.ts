@@ -1,7 +1,4 @@
-/**
- * Client-side authentication utilities
- * Handles localStorage and cookie management for auth
- */
+
 
 export interface UserData {
   id: string;
