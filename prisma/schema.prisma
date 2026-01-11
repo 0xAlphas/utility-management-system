@@ -8,7 +8,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model bills {
+model bill {
   id                String     @id
   billNumber        String     @unique
   billingMonth      Int
@@ -26,13 +26,14 @@ model bills {
   createdAt         DateTime   @default(now())
   updatedAt         DateTime
   customerId        String
-  customers         customers  @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  payments          payments[]
+  customer          customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  payments          payment[]
 
   @@unique([customerId, billingMonth, billingYear])
+  @@map("bills")
 }
 
-model complaints {
+model complaint {
   id          String    @id
   subject     String
   description String
@@ -43,10 +44,12 @@ model complaints {
   resolvedAt  DateTime?
   updatedAt   DateTime
   customerId  String
-  customers   customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer    customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("complaints")
 }
 
-model customers {
+model customer {
   id         String       @id
   name       String
   type       String
@@ -58,12 +61,14 @@ model customers {
   isActive   Boolean      @default(true)
   createdAt  DateTime     @default(now())
   updatedAt  DateTime
-  bills      bills[]
-  complaints complaints[]
-  meters     meters[]
+  bills      bill[]
+  complaints complaint[]
+  meters     meter[]
+
+  @@map("customers")
 }
 
-model meter_readings {
+model meterReading {
   id           String   @id
   readingValue Float
   readingDate  DateTime @default(now())
@@ -72,27 +77,30 @@ model meter_readings {
   createdAt    DateTime @default(now())
   updatedAt    DateTime
   meterId      String
-  meters       meters   @relation(fields: [meterId], references: [id], onDelete: Cascade)
+  meter        meter    @relation(fields: [meterId], references: [id], onDelete: Cascade)
+
+  @@map("meter_readings")
 }
 
-model meters {
-  id               String           @id
-  meterNumber      String           @unique
-  installationDate DateTime         @default(now())
+model meter {
+  id               String          @id
+  meterNumber      String          @unique
+  installationDate DateTime        @default(now())
   lastReadingDate  DateTime?
-  status           String           @default("ACTIVE")
-  createdAt        DateTime         @default(now())
+  status           String          @default("ACTIVE")
+  createdAt        DateTime        @default(now())
   updatedAt        DateTime
   customerId       String
   utilityTypeId    String
-  meter_readings   meter_readings[]
-  customers        customers        @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  utility_types    utility_types    @relation(fields: [utilityTypeId], references: [id])
+  readings         meterReading[]
+  customer         customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  utilityType      utilityType     @relation(fields: [utilityTypeId], references: [id])
 
   @@unique([customerId, utilityTypeId])
+  @@map("meters")
 }
 
-model payments {
+model payment {
   id              String   @id
   amount          Float
   paymentDate     DateTime @default(now())
@@ -103,7 +111,9 @@ model payments {
   createdAt       DateTime @default(now())
   updatedAt       DateTime
   billId          String
-  bills           bills    @relation(fields: [billId], references: [id], onDelete: Cascade)
+  bill            bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
 }
 
 model staff {
@@ -116,25 +126,29 @@ model staff {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime
+
+  @@map("staff")
 }
 
-model tariffs {
-  id            String        @id
+model tariff {
+  id            String      @id
   name          String
-  minUsage      Float         @default(0)
+  minUsage      Float       @default(0)
   maxUsage      Float?
   rate          Float
-  fixedCharge   Float         @default(0)
-  isActive      Boolean       @default(true)
-  effectiveFrom DateTime      @default(now())
+  fixedCharge   Float       @default(0)
+  isActive      Boolean     @default(true)
+  effectiveFrom DateTime    @default(now())
   effectiveTo   DateTime?
-  createdAt     DateTime      @default(now())
+  createdAt     DateTime    @default(now())
   updatedAt     DateTime
   utilityTypeId String
-  utility_types utility_types @relation(fields: [utilityTypeId], references: [id])
+  utilityType   utilityType @relation(fields: [utilityTypeId], references: [id])
+
+  @@map("tariffs")
 }
 
-model utility_types {
+model utilityType {
   id          String    @id
   name        String    @unique
   description String?
@@ -142,6 +156,8 @@ model utility_types {
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime
-  meters      meters[]
-  tariffs     tariffs[]
+  meters      meter[]
+  tariffs     tariff[]
+
+  @@map("utility_types")
 }
