@@ -1,5 +1,6 @@
 import prisma from './prisma';
 
+
 export interface TariffSlab {
   id: string;
   name: string;
